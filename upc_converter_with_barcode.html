@@ -120,7 +120,7 @@
     }
 
     .conversion-area {
-      min-height: 350px;
+      min-height: 290px;
       background: #f8f9fa;
       border-radius: 15px;
       padding: 30px;
@@ -306,6 +306,13 @@
     .digit-box.check {
       background: #fce7f3;
       border-color: #ec4899;
+    }
+
+    .digit-box.placeholder {
+      background: white;
+      border-color: #ddd;
+      opacity: 1;
+      visibility: visible;
     }
 
     .digit-box.animating {
@@ -698,7 +705,7 @@
       input.addEventListener('input', (e) => {
         // 数字以外の文字を除去
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
-        
+
         if (e.target.value.length === 1 && index < inputs.length - 1) {
           inputs[index + 1].focus();
         }
@@ -711,17 +718,17 @@
           'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
           'Home', 'End'
         ];
-        
+
         // 数字キー(0-9)または許可されたキーの場合は通す
         const isDigit = /^[0-9]$/.test(e.key);
         const isAllowedKey = allowedKeys.includes(e.key);
         const isCtrlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C等を許可
-        
+
         if (!isDigit && !isAllowedKey && !isCtrlKey) {
           e.preventDefault();
           return;
         }
-        
+
         // Backspaceでの前フィールドへの移動
         if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
           inputs[index - 1].focus();
@@ -823,14 +830,36 @@
       // リセット
       reset();
 
-      // UPC-E表示
+      // UPC-E表示（6桁同時に徐々に変化）
       const upceDisplay = document.getElementById('upceDisplay');
-      upceDisplay.innerHTML = '';
+      const existingPlaceholders = upceDisplay.querySelectorAll('.digit-box.placeholder');
 
       const upceDigits = [p1, p2, p3, p4, p5, p6];
+      const upceBoxes = [];
+
+      // プレースホルダーを段階的に変更（置換なし）
       upceDigits.forEach((digit, index) => {
-        const box = createDigitBox(digit, index < 5 ? 'source' : 'moved');
-        upceDisplay.appendChild(box);
+        const placeholder = existingPlaceholders[index];
+        if (placeholder) {
+          upceBoxes.push(placeholder);
+        }
+      });
+
+      await sleep(200 / animationSpeed);
+
+      // 6桁を同時に段階的変化
+      upceBoxes.forEach((box, index) => {
+        const digit = upceDigits[index];
+        const className = index < 5 ? 'source' : 'moved';
+
+        // テキストを設定
+        box.textContent = digit;
+
+        // 短い遅延後に色を変更
+        setTimeout(() => {
+          box.className = `digit-box ${className}`;
+          box.classList.add('animating');
+        }, 50);
       });
 
       await sleep(500 / animationSpeed);
@@ -842,7 +871,7 @@
       let patternId = '';
 
       if (p6Value >= 0 && p6Value <= 2) {
-        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 00000 + ${p3}${p4}${p5} + C`;
+        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 0000 + ${p3}${p4}${p5} + C`;
         patternId = 'pattern0';
       } else if (p6Value === 3) {
         pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
@@ -871,7 +900,7 @@
 
       // UPC-A生成
       const upcaDisplay = document.getElementById('upcaDisplay');
-      upcaDisplay.innerHTML = '';
+      const existingUpcaPlaceholders = upcaDisplay.querySelectorAll('.digit-box.placeholder');
 
       let upcaDigits = [];
 
@@ -893,32 +922,88 @@
       const checkDigit = calculateCheckDigit(upcaDigits);
       upcaDigits.push(checkDigit.toString());
 
-      // アニメーション付きで表示
-      for (let i = 0; i < upcaDigits.length; i++) {
-        const digit = upcaDigits[i];
-        let className = '';
+      // 段階的変化表示（プレースホルダーから徐々に変更）
+      const upcaBoxes = [];
 
-        if (i === 0) className = 'zero';
-        else if (i === upcaDigits.length - 1) className = 'check';
-        else if (digit === '0' && i >= 3 && i <= 10) className = 'zero';
-        else {
-          // P6由来の数字かチェック
-          if ((p6Value >= 0 && p6Value <= 2) && i === 3) {
-            className = 'moved'; // P6が変換された位置
-          } else if (p6Value >= 5 && p6Value <= 9 && i === 10) {
-            className = 'moved'; // P6がそのまま移動した位置
-          } else {
-            className = 'source';
+      // プレースホルダーを段階的に変更する準備
+      for (let i = 0; i < upcaDigits.length; i++) {
+        const placeholder = existingUpcaPlaceholders[i];
+        if (placeholder) {
+          upcaBoxes.push(placeholder);
+        }
+      }
+
+      // 最初に先頭0を表示
+      await sleep(150 / animationSpeed);
+      if (upcaBoxes[0]) {
+        upcaBoxes[0].textContent = upcaDigits[0];
+        setTimeout(() => {
+          upcaBoxes[0].className = 'digit-box zero';
+          upcaBoxes[0].classList.add('animating');
+        }, 50);
+      }
+
+      // 段階的表示: p1, p2, p3, p4, p5を1つずつ（元のUPC-E順序で）
+      const sourceIndices = [];
+      for (let i = 1; i < upcaDigits.length - 1; i++) {
+        if (upcaDigits[i] !== '0') {
+          // moved判定のためのクラス名を事前計算
+          let willBeMoved = false;
+          if ((p6Value >= 0 && p6Value <= 2) && i === 3) willBeMoved = true;
+          else if (p6Value >= 5 && p6Value <= 9 && i === 10) willBeMoved = true;
+
+          if (!willBeMoved) {
+            sourceIndices.push(i);
           }
         }
+      }
 
-        const box = createDigitBox(digit, className);
-        box.style.opacity = '0';
-        upcaDisplay.appendChild(box);
+      for (const index of sourceIndices) {
+        await sleep(150 / animationSpeed);
+        if (upcaBoxes[index]) {
+          upcaBoxes[index].textContent = upcaDigits[index];
+          setTimeout(() => {
+            upcaBoxes[index].className = 'digit-box source';
+            upcaBoxes[index].classList.add('animating');
+          }, 50);
+        }
+      }
 
-        await sleep(100 / animationSpeed);
-        box.style.opacity = '1';
-        box.classList.add('animating');
+      // p6を表示（moved class）
+      let p6Index = -1;
+      if (p6Value >= 0 && p6Value <= 2) p6Index = 3;
+      else if (p6Value >= 5 && p6Value <= 9) p6Index = 10;
+
+      if (p6Index !== -1 && upcaBoxes[p6Index]) {
+        await sleep(150 / animationSpeed);
+        upcaBoxes[p6Index].textContent = upcaDigits[p6Index];
+        setTimeout(() => {
+          upcaBoxes[p6Index].className = 'digit-box moved';
+          upcaBoxes[p6Index].classList.add('animating');
+        }, 50);
+      }
+
+      // 0を1つずつ表示（先頭0以外）
+      for (let i = 1; i < upcaBoxes.length - 1; i++) {
+        if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
+          await sleep(100 / animationSpeed);
+          upcaBoxes[i].textContent = '0';
+          setTimeout(() => {
+            upcaBoxes[i].className = 'digit-box zero';
+            upcaBoxes[i].classList.add('animating');
+          }, 50);
+        }
+      }
+
+      // チェックディジットを表示
+      await sleep(150 / animationSpeed);
+      const lastBox = upcaBoxes[upcaBoxes.length - 1];
+      if (lastBox) {
+        lastBox.textContent = upcaDigits[upcaDigits.length - 1];
+        setTimeout(() => {
+          lastBox.className = 'digit-box check';
+          lastBox.classList.add('animating');
+        }, 50);
       }
 
       await sleep(1000 / animationSpeed);
@@ -953,8 +1038,45 @@
       const resultSection = document.getElementById('resultSection');
       const barcodeDisplay = document.getElementById('barcodeDisplay');
 
-      if (upceDisplay) upceDisplay.innerHTML = '';
-      if (upcaDisplay) upcaDisplay.innerHTML = '';
+      // 既存要素をプレースホルダーに変換またはクリア（innerHTML使用回避）
+      if (upceDisplay) {
+        const existingBoxes = upceDisplay.querySelectorAll('.digit-box');
+        // 既存要素をプレースホルダーに変換
+        existingBoxes.forEach(box => {
+          box.className = 'digit-box placeholder';
+          box.textContent = '';
+          box.style.opacity = '1';
+          box.style.visibility = 'visible';
+        });
+
+        // 不足分を追加
+        const needed = 6 - existingBoxes.length;
+        for (let i = 0; i < needed; i++) {
+          const placeholderE = document.createElement('div');
+          placeholderE.classList.add('digit-box', 'placeholder');
+          upceDisplay.appendChild(placeholderE);
+        }
+      }
+
+      if (upcaDisplay) {
+        const existingBoxes = upcaDisplay.querySelectorAll('.digit-box');
+        // 既存要素をプレースホルダーに変換
+        existingBoxes.forEach(box => {
+          box.className = 'digit-box placeholder';
+          box.textContent = '';
+          box.style.opacity = '1';
+          box.style.visibility = 'visible';
+        });
+
+        // 不足分を追加
+        const needed = 12 - existingBoxes.length;
+        for (let i = 0; i < needed; i++) {
+          const placeholderA = document.createElement('div');
+          placeholderA.classList.add('digit-box', 'placeholder');
+          upcaDisplay.appendChild(placeholderA);
+        }
+      }
+
       if (arrow) arrow.classList.add('hidden');
       if (patternInfo) {
         patternInfo.classList.remove('show');
@@ -963,25 +1085,6 @@
       if (resultSection) resultSection.classList.remove('show');
       if (barcodeDisplay) barcodeDisplay.innerHTML = '';
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
-
-      // プレースホルダーを追加して高さを維持
-
-      // 透明なプレースホルダーボックスを6個ずつ配置
-      for (let i = 0; i < 6; i++) {
-        const placeholderE = document.createElement('div');
-        placeholderE.classList.add('digit-box');
-        placeholderE.style.opacity = '0';
-        placeholderE.style.visibility = 'hidden';
-        upceDisplay.appendChild(placeholderE);
-      }
-
-      for (let i = 0; i < 12; i++) {
-        const placeholderA = document.createElement('div');
-        placeholderA.classList.add('digit-box');
-        placeholderA.style.opacity = '0';
-        placeholderA.style.visibility = 'hidden';
-        upcaDisplay.appendChild(placeholderA);
-      }
     }
 
     // JsBarcodeライブラリの読み込み確認
