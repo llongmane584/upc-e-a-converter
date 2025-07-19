@@ -110,17 +110,4 @@ upc-e-a-converter/
 
 ## 参考資料
 
-- [GS1 General Specifications (PDF)](https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf)
-- [UPC-E Wikipedia](https://en.wikipedia.org/wiki/Universal_Product_Code#UPC-E)
-
-## ライセンス
-
-このプロジェクトは MIT ライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルを参照してください。
-
-## 作者
-
-[@llongmane584](https://github.com/llongmane584)
-
----
-
-⭐ このプロジェクトが役に立った場合は、スターをつけていただけると嬉しいです！
+[GS1 General Specifications (PDF)](https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf) 5.2.2.4.2 Decoding a UPC-E barcode
