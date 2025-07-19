@@ -125,6 +125,17 @@
       background-color: #fef3c7;
     }
 
+    /* スピンボタンを非表示 */
+    .digit-input::-webkit-inner-spin-button,
+    .digit-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .digit-input[type=number] {
+      -moz-appearance: textfield;
+    }
+
     .conversion-area {
       min-height: 290px;
       background: #f8f9fa;
@@ -647,12 +658,12 @@
     <div class="input-section">
       <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
       <div class="digit-inputs">
-        <input type="text" class="digit-input" maxlength="1" id="p1" placeholder="X₁" autofocus>
-        <input type="text" class="digit-input" maxlength="1" id="p2" placeholder="X₂">
-        <input type="text" class="digit-input" maxlength="1" id="p3" placeholder="X₃">
-        <input type="text" class="digit-input" maxlength="1" id="p4" placeholder="X₄">
-        <input type="text" class="digit-input" maxlength="1" id="p5" placeholder="X₅">
-        <input type="text" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆">
+        <input type="number" class="digit-input" maxlength="1" id="p1" placeholder="X₁" inputmode="numeric" pattern="[0-9]" autofocus>
+        <input type="number" class="digit-input" maxlength="1" id="p2" placeholder="X₂" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input" maxlength="1" id="p3" placeholder="X₃" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input" maxlength="1" id="p4" placeholder="X₄" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input" maxlength="1" id="p5" placeholder="X₅" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆" inputmode="numeric" pattern="[0-9]">
       </div>
     </div>
 
