@@ -120,6 +120,12 @@
         box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
       }
 
+      .digit-input:disabled {
+        background-color: #f3f4f6;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
       .digit-input.p6 {
         border-color: #f59e0b;
         background-color: #fef3c7;
@@ -428,19 +434,32 @@
         color: white;
       }
 
-      .btn-primary:hover {
+      .btn-primary:hover:not(:disabled) {
         background: #5a67d8;
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
       }
 
-      .btn-secondary {
-        background: #e5e7eb;
-        color: #374151;
+      .btn-primary:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
 
-      .btn-secondary:hover {
-        background: #d1d5db;
+      .btn-secondary {
+        background: #fff;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+      }
+
+      .btn-secondary:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }      
+
+      .btn-secondary:hover:not(:disabled) {
+        background: #e1e1e1;
       }
 
       .speed-control {
@@ -461,6 +480,11 @@
       .speed-slider {
         width: 200px;
         max-width: 100%;
+      }
+
+      .speed-slider:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
       }
 
       @media (max-width: 767px) {
@@ -862,6 +886,10 @@
           return;
         }
 
+        // UI要素を無効化
+        disableUIElements();
+
+        try {
         // リセット
         reset();
 
@@ -1062,6 +1090,10 @@
         // 少し遅延してバーコード生成
         await sleep(500 / animationSpeed);
         generateBarcode(upcCode);
+        } finally {
+          // UI要素を再有効化
+          enableUIElements();
+        }
       }
 
       function createDigitBox(digit, className) {
@@ -1133,6 +1165,56 @@
       }
 
       // JsBarcodeライブラリの読み込み確認
+      function disableUIElements() {
+        // 入力フィールドを無効化
+        document.querySelectorAll('.digit-input').forEach(input => {
+          input.disabled = true;
+        });
+        
+        // 変換開始ボタンを無効化
+        const convertButton = document.querySelector('button[onclick="startConversion()"]');
+        if (convertButton) {
+          convertButton.disabled = true;
+        }
+
+        // リセットボタンを無効化
+        const resettButton = document.querySelector('button[onclick="reset()"]');
+        if (resettButton) {
+          resettButton.disabled = true;
+        }
+        
+        // スピードスライダーを無効化
+        const speedSlider = document.getElementById('speedSlider');
+        if (speedSlider) {
+          speedSlider.disabled = true;
+        }
+      }
+
+      function enableUIElements() {
+        // 入力フィールドを有効化
+        document.querySelectorAll('.digit-input').forEach(input => {
+          input.disabled = false;
+        });
+        
+        // 変換開始ボタンを有効化
+        const convertButton = document.querySelector('button[onclick="startConversion()"]');
+        if (convertButton) {
+          convertButton.disabled = false;
+        }
+
+        // リセットボタンを有効化
+        const resettButton = document.querySelector('button[onclick="reset()"]');
+        if (resettButton) {
+          resettButton.disabled = false;
+        }        
+        
+        // スピードスライダーを有効化
+        const speedSlider = document.getElementById('speedSlider');
+        if (speedSlider) {
+          speedSlider.disabled = false;
+        }
+      }
+
       function checkJsBarcodeLoaded() {
       if (typeof JsBarcode === 'undefined') {
         console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
