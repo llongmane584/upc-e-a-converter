@@ -28,9 +28,14 @@ _C = チェックディジット（自動計算）_
 
 ## 使用方法
 
-### オンライン使用
+### デモページ
 
-1. ブラウザで `index.html` を開く
+GitHub pages:
+**[https://llongmane584.github.io/upc-e-a-converter/](https://llongmane584.github.io/upc-e-a-converter/)**
+
+### 手順
+
+1. デモページにアクセスするか、ローカルで `index.html` を開く
 2. UPC-E コード（6 桁）を入力フィールドに入力
 3. 「変換開始」ボタンをクリック
 4. アニメーションで変換過程を確認
