@@ -683,7 +683,7 @@
 
     <div class="pattern-table">
       <h3>変換パターン一覧</h3>
-      <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 00000 + X₃X₄X₅ + C</div>
+      <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 0000 + X₃X₄X₅ + C</div>
       <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
       <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
       <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
@@ -696,12 +696,33 @@
     // 入力フィールドの自動フォーカス移動
     document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
       input.addEventListener('input', (e) => {
+        // 数字以外の文字を除去
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        
         if (e.target.value.length === 1 && index < inputs.length - 1) {
           inputs[index + 1].focus();
         }
       });
 
       input.addEventListener('keydown', (e) => {
+        // 許可するキー: 数字(0-9), Backspace, Delete, Tab, Arrow keys, Enter
+        const allowedKeys = [
+          'Backspace', 'Delete', 'Tab', 'Enter',
+          'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+          'Home', 'End'
+        ];
+        
+        // 数字キー(0-9)または許可されたキーの場合は通す
+        const isDigit = /^[0-9]$/.test(e.key);
+        const isAllowedKey = allowedKeys.includes(e.key);
+        const isCtrlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C等を許可
+        
+        if (!isDigit && !isAllowedKey && !isCtrlKey) {
+          e.preventDefault();
+          return;
+        }
+        
+        // Backspaceでの前フィールドへの移動
         if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
           inputs[index - 1].focus();
         }
