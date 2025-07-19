@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(~/.bashrc)",
+      "Bash(gh issue list)",
+      "Bash(gh issue view)",
+      "Bash(curl localhost:*)",
+      "Bash(curl 127.0.0.1:*)",
+      "Bash(curl http://localhost:*)",
+      "Bash(curl https://localhost:*)",
+      "Bash(curl http://127.0.0.1:*)",
+      "Bash(curl https://127.0.0.1:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+  }
+}
