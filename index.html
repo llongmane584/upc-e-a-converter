@@ -1,663 +1,663 @@
 <!DOCTYPE html>
 <html lang="ja">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UPC-E → UPC-A 変換 with バーコード</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPC-E → UPC-A 変換 with バーコード</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p&family=Noto+Sans+JP:wght@100..900&display=swap"
     rel="stylesheet">
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       font-family: 'Noto Sans JP', sans-serif;
-    }
+      }
 
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-      padding: 40px;
-      max-width: 900px;
-      width: 100%;
-    }
-
-    /* モバイル対応 */
-    @media (max-width: 767px) {
       body {
-        padding: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
       }
 
       .container {
-        padding: 20px;
-        border-radius: 15px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 900px;
+        width: 100%;
+      }
+
+      /* モバイル対応 */
+      @media (max-width: 767px) {
+        body {
+          padding: 4px;
+        }
+
+        .container {
+          padding: 16px;
+          border-radius: 15px;
+        }
+
+        h1 {
+          font-size: 1.5em !important;
+        }
       }
 
       h1 {
-        font-size: 1.5em !important;
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 2em;
       }
-    }
 
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 30px;
-      font-size: 2em;
-    }
+      .input-section {
+        margin-bottom: 40px;
+      }
 
-    .input-section {
-      margin-bottom: 40px;
-    }
-
-    .input-label {
-      display: block;
-      margin-bottom: 10px;
-      color: #666;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    @media (max-width: 767px) {
       .input-label {
-        font-size: 14px;
+        display: block;
+        margin-bottom: 10px;
+        color: #666;
+        font-weight: 600;
+        text-align: center;
       }
-    }
 
-    .digit-inputs {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
+      @media (max-width: 767px) {
+        .input-label {
+          font-size: 14px;
+        }
+      }
 
-    @media (max-width: 480px) {
       .digit-inputs {
-        gap: 5px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
       }
-    }
 
-    .digit-input {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      text-align: center;
-      border: 3px solid #ddd;
-      border-radius: 10px;
-      transition: all 0.3s ease;
-      font-weight: bold;
-    }
+      @media (max-width: 767px) {
+        .digit-inputs {
+          gap: 5px;
+        }
+      }
 
-    @media (max-width: 480px) {
       .digit-input {
-        width: 45px;
-        height: 45px;
-        font-size: 20px;
-        border-width: 2px;
-      }
-    }
-
-    .digit-input:focus {
-      outline: none;
-      border-color: #667eea;
-      transform: scale(1.1);
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .digit-input.p6 {
-      border-color: #f59e0b;
-      background-color: #fef3c7;
-    }
-
-    /* スピンボタンを非表示 */
-    .digit-input::-webkit-inner-spin-button,
-    .digit-input::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    .digit-input[type=number] {
-      -moz-appearance: textfield;
-    }
-
-    .conversion-area {
-      min-height: 290px;
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 30px;
-      margin-bottom: 30px;
-      position: relative;
-      overflow: hidden;
-      /* スクロールバー防止 */
-      overflow-x: hidden;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    @media (max-width: 767px) {
-      .conversion-area {
-        min-height: 300px;
-        padding: 20px;
-        margin-bottom: 20px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .conversion-area {
-        padding: 2px;
-        min-height: 280px;
-      }
-    }
-
-    .pattern-info {
-      background: #e0e7ff;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      text-align: center;
-      font-weight: 600;
-      color: #4c1d95;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-      min-height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      word-break: break-all;
-    }
-
-    @media (max-width: 767px) {
-      .pattern-info {
-        font-size: 14px;
-        padding: 12px;
-        min-height: auto;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .pattern-info {
-        font-size: 12px;
-        padding: 10px;
-      }
-    }
-
-    .pattern-info.show {
-      opacity: 1;
-    }
-
-    .barcode-display {
-      display: flex;
-      flex-direction: column;
-      gap: 40px;
-      position: relative;
-      /* スクロール防止のための余白 */
-      padding: 0 10px;
-    }
-
-    @media (max-width: 767px) {
-      .barcode-display {
-        gap: 30px;
-        padding: 0;
-      }
-    }
-
-    .barcode-wrapper {
-      display: flex;
-      align-items: center;
-      position: relative;
-      min-height: 54px;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    @media (min-width: 768px) {
-      .barcode-wrapper {
-        flex-direction: row;
-        gap: 0;
-      }
-    }
-
-    .barcode-label {
-      font-size: 14px;
-      color: #666;
-      font-weight: 600;
-      width: auto;
-      text-align: center;
-    }
-
-    @media (min-width: 768px) {
-      .barcode-label {
-        position: absolute;
-        left: 0;
-        width: 80px;
-        text-align: left;
-      }
-    }
-
-    .barcode-row {
-      display: flex;
-      gap: 8px;
-      min-height: 54px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    @media (min-width: 768px) {
-      .barcode-row {
-        margin-left: 70px;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .barcode-row {
-        gap: 0px;
-      }
-    }
-
-    .digit-box {
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: bold;
-      border-radius: 8px;
-      border: 2px solid #ddd;
-      background: white;
-      position: relative;
-      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    @media (max-width: 767px) {
-      .digit-box {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .digit-box {
-        width: 26px;
-        height: 32px;
-        font-size: 14px;
-        border-radius: 6px;
-      }
-    }
-
-    .digit-box.source {
-      background: #dbeafe;
-      border-color: #3b82f6;
-    }
-
-    .digit-box.zero {
-      background: #dcfce7;
-      border-color: #22c55e;
-    }
-
-    .digit-box.moved {
-      background: #fef3c7;
-      border-color: #f59e0b;
-    }
-
-    .digit-box.check {
-      background: #fce7f3;
-      border-color: #ec4899;
-    }
-
-    .digit-box.placeholder {
-      background: white;
-      border-color: #ddd;
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .digit-box.animating {
-      animation: pulse 0.6s ease-out;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
-      }
-
-      50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
-      }
-
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .arrow {
-      position: absolute;
-      font-size: 30px;
-      color: #667eea;
-      animation: bounce 1s infinite;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    @media (max-width: 767px) {
-      .arrow {
+        width: 60px;
+        height: 60px;
         font-size: 24px;
-      }
-    }
-
-    @keyframes bounce {
-
-      0%,
-      100% {
-        transform: translateX(-50%) translateY(0);
+        text-align: center;
+        border: 3px solid #ddd;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-weight: bold;
       }
 
-      50% {
-        transform: translateX(-50%) translateY(10px);
+      @media (max-width: 767px) {
+        .digit-input {
+          width: 45px;
+          height: 45px;
+          font-size: 20px;
+          border-width: 2px;
+        }
       }
-    }
 
-    .controls {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
+      .digit-input:focus {
+        outline: none;
+        border-color: #667eea;
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+      }
 
-    @media (max-width: 480px) {
-      .controls {
-        gap: 10px;
+      .digit-input.p6 {
+        border-color: #f59e0b;
+        background-color: #fef3c7;
+      }
+
+      /* スピンボタンを非表示 */
+      .digit-input::-webkit-inner-spin-button,
+      .digit-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .digit-input[type="number"] {
+        -moz-appearance: textfield;
+      }
+
+      .conversion-area {
+        min-height: 290px;
+        /*background: #f8f9fa;*/
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        /* スクロールバー防止 */
+        overflow-x: hidden;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      @media (max-width: 767px) {
+        .conversion-area {
+          min-height: 300px;
+          padding: 20px;
+          margin-bottom: 20px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .conversion-area {
+          padding: 2px;
+          min-height: 280px;
+        }
+      }
+
+      .pattern-info {
+        background: #e0e7ff;
+        padding: 15px;
+        border-radius: 10px;
         margin-bottom: 20px;
+        text-align: center;
+        font-weight: 600;
+        color: #4c1d95;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        word-break: break-all;
       }
-    }
 
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    @media (max-width: 480px) {
-      .btn {
-        padding: 10px 20px;
-        font-size: 14px;
+      @media (max-width: 767px) {
+        .pattern-info {
+          font-size: 14px;
+          padding: 12px;
+          min-height: auto;
+        }
       }
-    }
 
-    .btn-primary {
-      background: #667eea;
-      color: white;
-    }
+      @media (max-width: 767px) {
+        .pattern-info {
+          font-size: 12px;
+          padding: 10px;
+        }
+      }
 
-    .btn-primary:hover {
-      background: #5a67d8;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
+      .pattern-info.show {
+        opacity: 1;
+      }
 
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #374151;
-    }
+      .barcode-display {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        position: relative;
+        /* スクロール防止のための余白 */
+        padding: 0 10px;
+      }
 
-    .btn-secondary:hover {
-      background: #d1d5db;
-    }
+      @media (max-width: 767px) {
+        .barcode-display {
+          gap: 30px;
+          padding: 0;
+        }
+      }
 
-    .speed-control {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      justify-content: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    @media (max-width: 480px) {
-      .speed-control {
+      .barcode-wrapper {
+        display: flex;
+        align-items: center;
+        position: relative;
+        min-height: 54px;
+        flex-direction: column;
         gap: 10px;
       }
-    }
 
-    .speed-slider {
-      width: 200px;
-      max-width: 100%;
-    }
-
-    @media (max-width: 480px) {
-      .speed-slider {
-        width: 150px;
+      @media (min-width: 768px) {
+        .barcode-wrapper {
+          flex-direction: row;
+          gap: 0;
+        }
       }
-    }
 
-    .result-section {
-      text-align: center;
-      margin-top: 30px;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-
-    @media (max-width: 767px) {
-      .result-section {
-        margin-top: 20px;
+      .barcode-label {
+        font-size: 14px;
+        color: #666;
+        font-weight: 600;
+        width: auto;
+        text-align: center;
       }
-    }
 
-    .result-section.show {
-      opacity: 1;
-    }
-
-    .result-section h3 {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    @media (max-width: 480px) {
-      .result-section h3 {
-        font-size: 16px;
+      @media (min-width: 768px) {
+        .barcode-label {
+          position: absolute;
+          left: 0;
+          width: 80px;
+          text-align: left;
+        }
       }
-    }
 
-    .result-code {
-      font-size: 24px;
-      font-family: 'Courier New', monospace;
-      background: #f3f4f6;
-      padding: 15px 30px;
-      border-radius: 10px;
-      margin: 10px auto;
-      display: inline-block;
-      word-break: break-all;
-      max-width: 100%;
-    }
+      .barcode-row {
+        display: flex;
+        gap: 8px;
+        min-height: 54px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
 
-    @media (max-width: 767px) {
-      .result-code {
+      @media (min-width: 768px) {
+        .barcode-row {
+          margin-left: 70px;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .barcode-row {
+          gap: 0px;
+        }
+      }
+
+      .digit-box {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 20px;
-        padding: 12px 20px;
+        font-weight: bold;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        background: white;
+        position: relative;
+        transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       }
-    }
 
-    @media (max-width: 480px) {
-      .result-code {
+      @media (max-width: 767px) {
+        .digit-box {
+          width: 40px;
+          height: 40px;
+          font-size: 18px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .digit-box {
+          width: 26px;
+          height: 32px;
+          font-size: 14px;
+          border-radius: 6px;
+        }
+      }
+
+      .digit-box.source {
+        background: #dbeafe;
+        border-color: #3b82f6;
+      }
+
+      .digit-box.zero {
+        background: #dcfce7;
+        border-color: #22c55e;
+      }
+
+      .digit-box.moved {
+        background: #fef3c7;
+        border-color: #f59e0b;
+      }
+
+      .digit-box.check {
+        background: #fce7f3;
+        border-color: #ec4899;
+      }
+
+      .digit-box.placeholder {
+        background: white;
+        border-color: #ddd;
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .digit-box.animating {
+        animation: pulse 0.6s ease-out;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+        }
+
+        50% {
+          transform: scale(1.1);
+          box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
+        }
+
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .arrow {
+        position: absolute;
+        font-size: 30px;
+        color: #667eea;
+        animation: bounce 1s infinite;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      @media (max-width: 767px) {
+        .arrow {
+          font-size: 24px;
+        }
+      }
+
+      @keyframes bounce {
+
+        0%,
+        100% {
+          transform: translateX(-50%) translateY(0);
+        }
+
+        50% {
+          transform: translateX(-50%) translateY(10px);
+        }
+      }
+
+      .controls {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      @media (max-width: 767px) {
+        .controls {
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
         font-size: 16px;
-        padding: 10px 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
       }
-    }
 
-    /* バーコード表示エリアのスタイル */
-    .barcode-container {
-      background: white;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px auto;
-      display: inline-block;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-
-    .barcode-container.show {
-      opacity: 1;
-    }
-
-    @media (max-width: 767px) {
-      .barcode-container {
-        padding: 15px;
-        margin: 15px auto;
+      @media (max-width: 767px) {
+        .btn {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
       }
-    }
 
-    @media (max-width: 480px) {
-      .barcode-container {
-        padding: 10px;
-        margin: 10px auto;
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .btn-secondary:hover {
+        background: #d1d5db;
+      }
+
+      .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      @media (max-width: 767px) {
+        .speed-control {
+          gap: 10px;
+        }
+      }
+
+      .speed-slider {
+        width: 200px;
         max-width: 100%;
-        overflow-x: auto;
       }
-    }
 
-    .barcode-svg {
-      display: block;
-      margin: 0 auto;
-      max-width: 100%;
-      height: auto;
-    }
-
-    @media (max-width: 480px) {
-      .barcode-svg {
-        width: 100%;
-        min-width: 280px;
+      @media (max-width: 767px) {
+        .speed-slider {
+          width: 150px;
+        }
       }
-    }
 
-    .pattern-table {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-top: 30px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    @media (max-width: 767px) {
-      .pattern-table {
-        padding: 15px;
-        margin-top: 20px;
+      .result-section {
+        text-align: center;
+        margin-top: 30px;
+        opacity: 0;
+        transition: opacity 0.5s ease;
       }
-    }
 
-    .pattern-table h3 {
-      margin-bottom: 15px;
-      color: #4b5563;
-      font-size: 18px;
-    }
+      @media (max-width: 767px) {
+        .result-section {
+          margin-top: 20px;
+        }
+      }
 
-    @media (max-width: 480px) {
-      .pattern-table h3 {
-        font-size: 16px;
+      .result-section.show {
+        opacity: 1;
+      }
+
+      .result-section h3 {
+        font-size: 18px;
         margin-bottom: 10px;
       }
-    }
 
-    .pattern-row {
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-      transition: all 0.3s ease;
+      @media (max-width: 767px) {
+        .result-section h3 {
+          font-size: 16px;
+        }
+      }
+
+      .result-code {
+        font-size: 24px;
       font-family: 'Courier New', monospace;
-      font-size: 14px;
-      word-break: break-all;
-    }
-
-    @media (max-width: 767px) {
-      .pattern-row {
-        font-size: 12px;
-        padding: 8px;
+        background: #f3f4f6;
+        padding: 15px 30px;
+        border-radius: 10px;
+        margin: 10px auto;
+        display: inline-block;
+        word-break: break-all;
+        max-width: 100%;
       }
-    }
 
-    @media (max-width: 480px) {
-      .pattern-row {
-        font-size: 11px;
-        padding: 6px;
+      @media (max-width: 767px) {
+        .result-code {
+          font-size: 20px;
+          padding: 12px 20px;
+        }
       }
-    }
 
-    .pattern-row.active {
-      background: #dbeafe;
-      border: 2px solid #3b82f6;
-      transform: scale(1.02);
-    }
+      @media (max-width: 767px) {
+        .result-code {
+          font-size: 16px;
+          padding: 10px 15px;
+        }
+      }
 
-    .hidden {
-      display: none;
-    }
+      /* バーコード表示エリアのスタイル */
+      .barcode-container {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px auto;
+        display: inline-block;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
 
-    .barcode-info {
-      background: #e8f4fd;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 12px;
-      color: #1e40af;
-    }
+      .barcode-container.show {
+        opacity: 1;
+      }
 
-    @media (max-width: 480px) {
+      @media (max-width: 767px) {
+        .barcode-container {
+          padding: 15px;
+          margin: 15px auto;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .barcode-container {
+          padding: 10px;
+          margin: 10px auto;
+          max-width: 100%;
+          overflow-x: auto;
+        }
+      }
+
+      .barcode-svg {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+        height: auto;
+      }
+
+      @media (max-width: 767px) {
+        .barcode-svg {
+          width: 100%;
+          min-width: 280px;
+        }
+      }
+
+      .pattern-table {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      @media (max-width: 767px) {
+        .pattern-table {
+          padding: 15px;
+          margin-top: 20px;
+        }
+      }
+
+      .pattern-table h3 {
+        margin-bottom: 15px;
+        color: #4b5563;
+        font-size: 18px;
+      }
+
+      @media (max-width: 767px) {
+        .pattern-table h3 {
+          font-size: 16px;
+          margin-bottom: 10px;
+        }
+      }
+
+      .pattern-row {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        word-break: break-all;
+      }
+
+      @media (max-width: 767px) {
+        .pattern-row {
+          font-size: 12px;
+          padding: 8px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .pattern-row {
+          font-size: 11px;
+          padding: 6px;
+        }
+      }
+
+      .pattern-row.active {
+        background: #dbeafe;
+        border: 2px solid #3b82f6;
+        transform: scale(1.02);
+      }
+
+      .hidden {
+        display: none;
+      }
+
       .barcode-info {
-        font-size: 11px;
-        padding: 8px;
+        background: #e8f4fd;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #1e40af;
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div class="container">
-    <h1>UPC-E → UPC-A 変換</h1>
+      @media (max-width: 767px) {
+        .barcode-info {
+          font-size: 11px;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
 
-    <div class="input-section">
+  <body>
+    <div class="container">
+      <h1>UPC-E → UPC-A 変換</h1>
+
+      <div class="input-section">
       <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
-      <div class="digit-inputs">
+        <div class="digit-inputs">
         <input type="number" class="digit-input" maxlength="1" id="p1" placeholder="X₁" inputmode="numeric"
           pattern="[0-9]" autofocus>
         <input type="number" class="digit-input" maxlength="1" id="p2" placeholder="X₂" inputmode="numeric"
@@ -670,49 +670,49 @@
           pattern="[0-9]">
         <input type="number" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆" inputmode="numeric"
           pattern="[0-9]">
-      </div>
-    </div>
-
-    <div class="controls">
-      <button class="btn btn-primary" onclick="startConversion()">変換開始</button>
-      <button class="btn btn-secondary" onclick="reset()">リセット</button>
-    </div>
-
-    <div class="speed-control">
-      <label>アニメーション速度：</label>
-      <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
-      <span id="speedValue">1x</span>
-    </div>
-
-    <div class="conversion-area">
-      <div class="pattern-info" id="patternInfo">&nbsp;</div>
-
-      <div class="barcode-display">
-        <div class="barcode-wrapper">
-          <span class="barcode-label">UPC-E:</span>
-          <div class="barcode-row" id="upceDisplay"></div>
         </div>
+      </div>
+
+      <div class="controls">
+      <button class="btn btn-primary" onclick="startConversion()">変換開始</button>
+        <button class="btn btn-secondary" onclick="reset()">リセット</button>
+      </div>
+
+      <div class="speed-control">
+        <label>アニメーション速度：</label>
+      <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
+        <span id="speedValue">1x</span>
+      </div>
+
+      <div class="conversion-area">
+        <div class="pattern-info" id="patternInfo">&nbsp;</div>
+
+        <div class="barcode-display">
+          <div class="barcode-wrapper">
+            <span class="barcode-label">UPC-E:</span>
+            <div class="barcode-row" id="upceDisplay"></div>
+          </div>
 
         <div class="arrow hidden" id="arrow" style="top: 50px;">↓</div>
 
-        <div class="barcode-wrapper">
-          <span class="barcode-label">UPC-A:</span>
-          <div class="barcode-row" id="upcaDisplay"></div>
+          <div class="barcode-wrapper">
+            <span class="barcode-label">UPC-A:</span>
+            <div class="barcode-row" id="upcaDisplay"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="result-section" id="resultSection">
-      <h3>変換結果</h3>
+      <div class="result-section" id="resultSection">
+        <h3>変換結果</h3>
 
-      <!-- バーコード表示エリア（result-codeを置き換え） -->
-      <div class="result-code" id="resultCode">
-        <svg id="barcodeDisplay" class="barcode-svg"></svg>
+        <!-- バーコード表示エリア（result-codeを置き換え） -->
+        <div class="result-code" id="resultCode">
+          <svg id="barcodeDisplay" class="barcode-svg"></svg>
+        </div>
       </div>
-    </div>
 
-    <div class="pattern-table">
-      <h3>変換パターン一覧</h3>
+      <div class="pattern-table">
+        <h3>変換パターン一覧</h3>
       <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 0000 + X₃X₄X₅ + C</div>
       <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
       <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
@@ -721,123 +721,128 @@
       <div style="margin-top: 15px; text-align: left; font-size: 14px;"><span style="margin-right:0.2rem;">📖 参照:</span>
         <a href="https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf" target="_blank"
           style="color: #667eea; text-decoration: none; ">
-          GS1 General Specifications (PDF)
-        </a>
+            GS1 General Specifications (PDF)
+          </a>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    let animationSpeed = 1;
+    <script>
+      let animationSpeed = 1;
 
-    // 入力フィールドの自動フォーカス移動
+      // 入力フィールドの自動フォーカス移動
     document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
       input.addEventListener('input', (e) => {
-        // 数字以外の文字を除去
+            // 数字以外の文字を除去
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        
+            // 最大1文字に制限
+            if (e.target.value.length > 1) {
+              e.target.value = e.target.value.slice(0, 1);
+            }
 
-        if (e.target.value.length === 1 && index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        }
-      });
+            if (e.target.value.length === 1 && index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            }
+          });
 
       input.addEventListener('keydown', (e) => {
-        // 許可するキー: 数字(0-9), Backspace, Delete, Tab, Arrow keys, Enter
-        const allowedKeys = [
+            // 許可するキー: 数字(0-9), Backspace, Delete, Tab, Arrow keys, Enter
+            const allowedKeys = [
           'Backspace', 'Delete', 'Tab', 'Enter',
           'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
           'Home', 'End'
-        ];
+            ];
 
-        // 数字キー(0-9)または許可されたキーの場合は通す
-        const isDigit = /^[0-9]$/.test(e.key);
-        const isAllowedKey = allowedKeys.includes(e.key);
-        const isCtrlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C等を許可
+            // 数字キー(0-9)または許可されたキーの場合は通す
+            const isDigit = /^[0-9]$/.test(e.key);
+            const isAllowedKey = allowedKeys.includes(e.key);
+            const isCtrlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C等を許可
 
-        if (!isDigit && !isAllowedKey && !isCtrlKey) {
-          e.preventDefault();
-          return;
-        }
+            if (!isDigit && !isAllowedKey && !isCtrlKey) {
+              e.preventDefault();
+              return;
+            }
 
-        // Backspaceでの前フィールドへの移動
+            // Backspaceでの前フィールドへの移動
         if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
-          inputs[index - 1].focus();
-        }
-      });
+              inputs[index - 1].focus();
+            }
+          });
 
       input.addEventListener('focus', (e) => {
-        e.target.select();
-      });
-    });
+            e.target.select();
+          });
+        });
 
-    // スピードスライダー
+      // スピードスライダー
     document.getElementById('speedSlider').addEventListener('input', (e) => {
-      animationSpeed = parseFloat(e.target.value);
+        animationSpeed = parseFloat(e.target.value);
       document.getElementById('speedValue').textContent = animationSpeed + 'x';
-    });
+      });
 
-    function calculateCheckDigit(digits) {
-      let sum = 0;
-      for (let i = 0; i < 11; i++) {
-        sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
+      function calculateCheckDigit(digits) {
+        let sum = 0;
+        for (let i = 0; i < 11; i++) {
+          sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
+        }
+        return (10 - (sum % 10)) % 10;
       }
-      return (10 - (sum % 10)) % 10;
-    }
 
-    function fallbackTextDisplay(upcCode) {
+      function fallbackTextDisplay(upcCode) {
       const resultCode = document.getElementById('resultCode');
-      resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
+        resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
                 <div style="margin-bottom: 10px; font-size: 18px; color: #666;">バーコード（テキスト表示）</div>
                 <div>${upcCode}</div>
             </div>`;
-    }
+      }
 
-    function generateBarcode(upcCode) {
-      // JsBarcodeライブラリの存在確認
+      function generateBarcode(upcCode) {
+        // JsBarcodeライブラリの存在確認
       if (typeof JsBarcode === 'undefined') {
         console.warn('JsBarcode library not loaded, using fallback text display');
-        fallbackTextDisplay(upcCode);
-        return;
-      }
+          fallbackTextDisplay(upcCode);
+          return;
+        }
 
-      // UPCコード桁数検証（12桁必須）
-      if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
+        // UPCコード桁数検証（12桁必須）
+        if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
         console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
-        fallbackTextDisplay(upcCode);
-        return;
-      }
+          fallbackTextDisplay(upcCode);
+          return;
+        }
 
-      try {
+        try {
         const svg = document.getElementById('barcodeDisplay');
 
-        // SVGをクリア
+          // SVGをクリア
         svg.innerHTML = '';
 
-        // JsBarcodeでバーコード生成
-        JsBarcode(svg, upcCode, {
-          format: "UPC",
-          width: 2,
-          height: 80,
-          lineColor: "#000000",
-          background: "#ffffff",
-          margin: 10,
-          fontSize: 14,
-          displayValue: true,
-          fontOptions: "bold",
-          textAlign: "center",
-          textPosition: "bottom",
+          // JsBarcodeでバーコード生成
+          JsBarcode(svg, upcCode, {
+            format: "UPC",
+            width: 2,
+            height: 80,
+            lineColor: "#000000",
+            background: "#ffffff",
+            margin: 10,
+            fontSize: 14,
+            displayValue: true,
+            fontOptions: "bold",
+            textAlign: "center",
+            textPosition: "bottom",
           textMargin: 2
-        });
+          });
 
-      } catch (error) {
+        } catch (error) {
         console.error('バーコード生成エラー:', error);
         console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
-        // エラーの場合はフォールバック表示
-        fallbackTextDisplay(upcCode);
+          // エラーの場合はフォールバック表示
+          fallbackTextDisplay(upcCode);
+        }
       }
-    }
 
-    async function startConversion() {
+      async function startConversion() {
       const p1 = document.getElementById('p1').value;
       const p2 = document.getElementById('p2').value;
       const p3 = document.getElementById('p3').value;
@@ -845,232 +850,232 @@
       const p5 = document.getElementById('p5').value;
       const p6 = document.getElementById('p6').value;
 
-      if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
+        if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
         alert('すべての桁を入力してください');
-        return;
-      }
+          return;
+        }
 
-      // 数字チェック
+        // 数字チェック
       if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) ||
         !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
         alert('数字のみを入力してください');
-        return;
-      }
+          return;
+        }
 
-      // リセット
-      reset();
+        // リセット
+        reset();
 
-      // UPC-E表示（6桁同時に徐々に変化）
+        // UPC-E表示（6桁同時に徐々に変化）
       const upceDisplay = document.getElementById('upceDisplay');
       const existingPlaceholders = upceDisplay.querySelectorAll('.digit-box.placeholder');
 
-      const upceDigits = [p1, p2, p3, p4, p5, p6];
-      const upceBoxes = [];
+        const upceDigits = [p1, p2, p3, p4, p5, p6];
+        const upceBoxes = [];
 
-      // プレースホルダーを段階的に変更（置換なし）
-      upceDigits.forEach((digit, index) => {
-        const placeholder = existingPlaceholders[index];
-        if (placeholder) {
-          upceBoxes.push(placeholder);
-        }
-      });
+        // プレースホルダーを段階的に変更（置換なし）
+        upceDigits.forEach((digit, index) => {
+          const placeholder = existingPlaceholders[index];
+          if (placeholder) {
+            upceBoxes.push(placeholder);
+          }
+        });
 
-      await sleep(500 / animationSpeed);
+        await sleep(500 / animationSpeed);
 
-      // 6桁を同時に段階的変化
-      upceBoxes.forEach((box, index) => {
-        const digit = upceDigits[index];
+        // 6桁を同時に段階的変化
+        upceBoxes.forEach((box, index) => {
+          const digit = upceDigits[index];
         const className = index < 5 ? 'source' : 'moved';
 
-        // テキストを設定
-        box.textContent = digit;
+          // テキストを設定
+          box.textContent = digit;
 
-        // 短い遅延後に色を変更
-        setTimeout(() => {
-          box.className = `digit-box ${className}`;
+          // 短い遅延後に色を変更
+          setTimeout(() => {
+            box.className = `digit-box ${className}`;
           box.classList.add('animating');
-        }, 50);
-      });
+          }, 50);
+        });
 
-      //await sleep(500 / animationSpeed);
+        //await sleep(500 / animationSpeed);
 
-      // パターン情報表示
+        // パターン情報表示
       const patternInfo = document.getElementById('patternInfo');
-      const p6Value = parseInt(p6);
+        const p6Value = parseInt(p6);
       let pattern = '';
       let patternId = '';
 
-      if (p6Value >= 0 && p6Value <= 2) {
-        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 0000 + ${p3}${p4}${p5} + C`;
+        if (p6Value >= 0 && p6Value <= 2) {
+          pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 0000 + ${p3}${p4}${p5} + C`;
         patternId = 'pattern0';
-      } else if (p6Value === 3) {
-        pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
+        } else if (p6Value === 3) {
+          pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
         patternId = 'pattern3';
-      } else if (p6Value === 4) {
-        pattern = `P6 = 4 のパターン: 0 + ${p1}${p2}${p3}${p4} + 00000 + ${p5} + C`;
+        } else if (p6Value === 4) {
+          pattern = `P6 = 4 のパターン: 0 + ${p1}${p2}${p3}${p4} + 00000 + ${p5} + C`;
         patternId = 'pattern4';
-      } else {
-        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2}${p3}${p4}${p5} + 0000 + ${p6} + C`;
+        } else {
+          pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2}${p3}${p4}${p5} + 0000 + ${p6} + C`;
         patternId = 'pattern5';
-      }
+        }
 
-      patternInfo.textContent = pattern;
+        patternInfo.textContent = pattern;
       patternInfo.classList.add('show');
 
-      // パターンテーブルのハイライト
+        // パターンテーブルのハイライト
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
       document.getElementById(patternId).classList.add('active');
 
-      await sleep(500 / animationSpeed);
+        await sleep(500 / animationSpeed);
 
-      // 矢印表示
+        // 矢印表示
       document.getElementById('arrow').classList.remove('hidden');
 
-      await sleep(200 / animationSpeed);
+        await sleep(200 / animationSpeed);
 
-      // UPC-A生成
+        // UPC-A生成
       const upcaDisplay = document.getElementById('upcaDisplay');
       const existingUpcaPlaceholders = upcaDisplay.querySelectorAll('.digit-box.placeholder');
 
-      let upcaDigits = [];
+        let upcaDigits = [];
 
-      // 先頭の0
+        // 先頭の0
       upcaDigits.push('0');
 
-      // パターンに応じた変換
-      if (p6Value >= 0 && p6Value <= 2) {
+        // パターンに応じた変換
+        if (p6Value >= 0 && p6Value <= 2) {
         upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
-      } else if (p6Value === 3) {
+        } else if (p6Value === 3) {
         upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
-      } else if (p6Value === 4) {
+        } else if (p6Value === 4) {
         upcaDigits.push(p1, p2, p3, p4, '0', '0', '0', '0', '0', p5);
-      } else {
+        } else {
         upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
-      }
-
-      // チェックディジット計算
-      const checkDigit = calculateCheckDigit(upcaDigits);
-      upcaDigits.push(checkDigit.toString());
-
-      // 段階的変化表示（プレースホルダーから徐々に変更）
-      const upcaBoxes = [];
-
-      // プレースホルダーを段階的に変更する準備
-      for (let i = 0; i < upcaDigits.length; i++) {
-        const placeholder = existingUpcaPlaceholders[i];
-        if (placeholder) {
-          upcaBoxes.push(placeholder);
         }
-      }
 
-      // 最初に先頭0を表示
-      await sleep(150 / animationSpeed);
-      if (upcaBoxes[0]) {
-        upcaBoxes[0].textContent = upcaDigits[0];
-        setTimeout(() => {
+        // チェックディジット計算
+        const checkDigit = calculateCheckDigit(upcaDigits);
+        upcaDigits.push(checkDigit.toString());
+
+        // 段階的変化表示（プレースホルダーから徐々に変更）
+        const upcaBoxes = [];
+
+        // プレースホルダーを段階的に変更する準備
+        for (let i = 0; i < upcaDigits.length; i++) {
+          const placeholder = existingUpcaPlaceholders[i];
+          if (placeholder) {
+            upcaBoxes.push(placeholder);
+          }
+        }
+
+        // 最初に先頭0を表示
+        await sleep(150 / animationSpeed);
+        if (upcaBoxes[0]) {
+          upcaBoxes[0].textContent = upcaDigits[0];
+          setTimeout(() => {
           upcaBoxes[0].className = 'digit-box zero';
           upcaBoxes[0].classList.add('animating');
-        }, 50);
-      }
+          }, 50);
+        }
 
-      await sleep(800 / animationSpeed);
+        await sleep(800 / animationSpeed);
 
-      // 段階的表示: p1, p2, p3, p4, p5を1つずつ（元のUPC-E順序で）
-      const sourceIndices = [];
-      for (let i = 1; i < upcaDigits.length - 1; i++) {
+        // 段階的表示: p1, p2, p3, p4, p5を1つずつ（元のUPC-E順序で）
+        const sourceIndices = [];
+        for (let i = 1; i < upcaDigits.length - 1; i++) {
         if (upcaDigits[i] !== '0') {
-          // moved判定のためのクラス名を事前計算
-          let willBeMoved = false;
+            // moved判定のためのクラス名を事前計算
+            let willBeMoved = false;
           if ((p6Value >= 0 && p6Value <= 2) && i === 3) willBeMoved = true;
           else if (p6Value >= 5 && p6Value <= 9 && i === 10) willBeMoved = true;
 
-          if (!willBeMoved) {
-            sourceIndices.push(i);
+            if (!willBeMoved) {
+              sourceIndices.push(i);
+            }
           }
         }
-      }
 
-      await sleep(800 / animationSpeed);
+        await sleep(800 / animationSpeed);
 
-      for (const index of sourceIndices) {
-        await sleep(150 / animationSpeed);
-        if (upcaBoxes[index]) {
-          upcaBoxes[index].textContent = upcaDigits[index];
-          setTimeout(() => {
+        for (const index of sourceIndices) {
+          await sleep(150 / animationSpeed);
+          if (upcaBoxes[index]) {
+            upcaBoxes[index].textContent = upcaDigits[index];
+            setTimeout(() => {
             upcaBoxes[index].className = 'digit-box source';
             upcaBoxes[index].classList.add('animating');
-          }, 50);
+            }, 50);
+          }
         }
-      }
 
-      await sleep(800 / animationSpeed);
+        await sleep(800 / animationSpeed);
 
-      // p6を表示（moved class）
-      let p6Index = -1;
-      if (p6Value >= 0 && p6Value <= 2) p6Index = 3;
-      else if (p6Value >= 5 && p6Value <= 9) p6Index = 10;
+        // p6を表示（moved class）
+        let p6Index = -1;
+        if (p6Value >= 0 && p6Value <= 2) p6Index = 3;
+        else if (p6Value >= 5 && p6Value <= 9) p6Index = 10;
 
-      if (p6Index !== -1 && upcaBoxes[p6Index]) {
-        await sleep(150 / animationSpeed);
-        upcaBoxes[p6Index].textContent = upcaDigits[p6Index];
-        setTimeout(() => {
+        if (p6Index !== -1 && upcaBoxes[p6Index]) {
+          await sleep(150 / animationSpeed);
+          upcaBoxes[p6Index].textContent = upcaDigits[p6Index];
+          setTimeout(() => {
           upcaBoxes[p6Index].className = 'digit-box moved';
           upcaBoxes[p6Index].classList.add('animating');
-        }, 50);
-      }
-
-      await sleep(800 / animationSpeed);
-
-      // 0を1つずつ表示（先頭0以外）
-      for (let i = 1; i < upcaBoxes.length - 1; i++) {
-        if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
-          await sleep(100 / animationSpeed);
-          upcaBoxes[i].textContent = '0';
-          setTimeout(() => {
-            upcaBoxes[i].className = 'digit-box zero';
-            upcaBoxes[i].classList.add('animating');
           }, 50);
         }
-      }
 
-      await sleep(800 / animationSpeed);
+        await sleep(800 / animationSpeed);
 
-      // チェックディジットを表示
-      await sleep(150 / animationSpeed);
-      const lastBox = upcaBoxes[upcaBoxes.length - 1];
-      if (lastBox) {
-        lastBox.textContent = upcaDigits[upcaDigits.length - 1];
-        setTimeout(() => {
+        // 0を1つずつ表示（先頭0以外）
+        for (let i = 1; i < upcaBoxes.length - 1; i++) {
+        if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
+            await sleep(100 / animationSpeed);
+          upcaBoxes[i].textContent = '0';
+            setTimeout(() => {
+            upcaBoxes[i].className = 'digit-box zero';
+            upcaBoxes[i].classList.add('animating');
+            }, 50);
+          }
+        }
+
+        await sleep(800 / animationSpeed);
+
+        // チェックディジットを表示
+        await sleep(150 / animationSpeed);
+        const lastBox = upcaBoxes[upcaBoxes.length - 1];
+        if (lastBox) {
+          lastBox.textContent = upcaDigits[upcaDigits.length - 1];
+          setTimeout(() => {
           lastBox.className = 'digit-box check';
           lastBox.classList.add('animating');
-        }, 50);
-      }
+          }, 50);
+        }
 
-      await sleep(1000 / animationSpeed);
+        await sleep(1000 / animationSpeed);
 
-      // 結果表示とバーコード生成
+        // 結果表示とバーコード生成
       const resultSection = document.getElementById('resultSection');
       const upcCode = upcaDigits.join(''); // チェックディジット込み12桁
 
       resultSection.classList.add('show');
 
-      // 少し遅延してバーコード生成
-      await sleep(500 / animationSpeed);
-      generateBarcode(upcCode);
-    }
+        // 少し遅延してバーコード生成
+        await sleep(500 / animationSpeed);
+        generateBarcode(upcCode);
+      }
 
-    function createDigitBox(digit, className) {
+      function createDigitBox(digit, className) {
       const box = document.createElement('div');
       box.classList.add('digit-box', className);
-      box.textContent = digit;
-      return box;
-    }
+        box.textContent = digit;
+        return box;
+      }
 
-    function sleep(ms) {
+      function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
-    }
+      }
 
-    function reset() {
+      function reset() {
       const upceDisplay = document.getElementById('upceDisplay');
       const upcaDisplay = document.getElementById('upcaDisplay');
       const arrow = document.getElementById('arrow');
@@ -1078,88 +1083,88 @@
       const resultSection = document.getElementById('resultSection');
       const barcodeDisplay = document.getElementById('barcodeDisplay');
 
-      // 既存要素をプレースホルダーに変換またはクリア（innerHTML使用回避）
-      if (upceDisplay) {
+        // 既存要素をプレースホルダーに変換またはクリア（innerHTML使用回避）
+        if (upceDisplay) {
         const existingBoxes = upceDisplay.querySelectorAll('.digit-box');
-        // 既存要素をプレースホルダーに変換
+          // 既存要素をプレースホルダーに変換
         existingBoxes.forEach(box => {
           box.className = 'digit-box placeholder';
           box.textContent = '';
           box.style.opacity = '1';
           box.style.visibility = 'visible';
-        });
+          });
 
-        // 不足分を追加
-        const needed = 6 - existingBoxes.length;
-        for (let i = 0; i < needed; i++) {
+          // 不足分を追加
+          const needed = 6 - existingBoxes.length;
+          for (let i = 0; i < needed; i++) {
           const placeholderE = document.createElement('div');
           placeholderE.classList.add('digit-box', 'placeholder');
-          upceDisplay.appendChild(placeholderE);
+            upceDisplay.appendChild(placeholderE);
+          }
         }
-      }
 
-      if (upcaDisplay) {
+        if (upcaDisplay) {
         const existingBoxes = upcaDisplay.querySelectorAll('.digit-box');
-        // 既存要素をプレースホルダーに変換
+          // 既存要素をプレースホルダーに変換
         existingBoxes.forEach(box => {
           box.className = 'digit-box placeholder';
           box.textContent = '';
           box.style.opacity = '1';
           box.style.visibility = 'visible';
-        });
+          });
 
-        // 不足分を追加
-        const needed = 12 - existingBoxes.length;
-        for (let i = 0; i < needed; i++) {
+          // 不足分を追加
+          const needed = 12 - existingBoxes.length;
+          for (let i = 0; i < needed; i++) {
           const placeholderA = document.createElement('div');
           placeholderA.classList.add('digit-box', 'placeholder');
-          upcaDisplay.appendChild(placeholderA);
+            upcaDisplay.appendChild(placeholderA);
+          }
         }
-      }
 
       if (arrow) arrow.classList.add('hidden');
-      if (patternInfo) {
+        if (patternInfo) {
         patternInfo.classList.remove('show');
         patternInfo.innerHTML = '&nbsp;';
-      }
+        }
       if (resultSection) resultSection.classList.remove('show');
       if (barcodeDisplay) barcodeDisplay.innerHTML = '';
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
-    }
+      }
 
-    // JsBarcodeライブラリの読み込み確認
-    function checkJsBarcodeLoaded() {
+      // JsBarcodeライブラリの読み込み確認
+      function checkJsBarcodeLoaded() {
       if (typeof JsBarcode === 'undefined') {
         console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
-        return false;
+          return false;
+        }
+        //console.log('JsBarcode library loaded successfully');
+        return true;
       }
-      //console.log('JsBarcode library loaded successfully');
-      return true;
-    }
 
-    // ページ読み込み時の初期化（DOMContentLoaded）
+      // ページ読み込み時の初期化（DOMContentLoaded）
     window.addEventListener('DOMContentLoaded', () => {
-      reset();
-    });
+        reset();
+      });
 
-    // ライブラリ読み込み確認（window.load）
+      // ライブラリ読み込み確認（window.load）
     window.addEventListener('load', () => {
-      checkJsBarcodeLoaded();
-    });
+        checkJsBarcodeLoaded();
+      });
 
-    // 画面幅に応じて矢印の位置を調整
-    function adjustArrowPosition() {
+      // 画面幅に応じて矢印の位置を調整
+      function adjustArrowPosition() {
       const arrow = document.getElementById('arrow');
-      if (window.innerWidth <= 767) {
+        if (window.innerWidth <= 767) {
         arrow.style.top = '70px';
-      } else {
+        } else {
         arrow.style.top = '45px';
+        }
       }
-    }
 
     window.addEventListener('resize', adjustArrowPosition);
     window.addEventListener('DOMContentLoaded', adjustArrowPosition);
-  </script>
-</body>
+    </script>
+  </body>
 
 </html>
