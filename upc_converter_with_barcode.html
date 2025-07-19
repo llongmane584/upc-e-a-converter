@@ -714,7 +714,29 @@
             return (10 - (sum % 10)) % 10;
         }
 
+        function fallbackTextDisplay(upcCode) {
+            const resultCode = document.getElementById('resultCode');
+            resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
+                <div style="margin-bottom: 10px; font-size: 18px; color: #666;">バーコード（テキスト表示）</div>
+                <div>${upcCode}</div>
+            </div>`;
+        }
+
         function generateBarcode(upcCode) {
+            // JsBarcodeライブラリの存在確認
+            if (typeof JsBarcode === 'undefined') {
+                console.warn('JsBarcode library not loaded, using fallback text display');
+                fallbackTextDisplay(upcCode);
+                return;
+            }
+            
+            // UPCコード桁数検証（12桁必須）
+            if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
+                console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
+                fallbackTextDisplay(upcCode);
+                return;
+            }
+            
             try {
                 const svg = document.getElementById('barcodeDisplay');
                 
@@ -739,9 +761,9 @@
                 
             } catch (error) {
                 console.error('バーコード生成エラー:', error);
-                // エラーの場合はテキストで表示
-                const resultCode = document.getElementById('resultCode');
-                resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333;">${upcCode}</div>`;
+                console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
+                // エラーの場合はフォールバック表示
+                fallbackTextDisplay(upcCode);
             }
         }
 
@@ -825,7 +847,7 @@
             
             // パターンに応じた変換
             if (p6Value >= 0 && p6Value <= 2) {
-                upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', '0', p3, p4, p5);
+                upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
             } else if (p6Value === 3) {
                 upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
             } else if (p6Value === 4) {
@@ -870,7 +892,8 @@
 
             // 結果表示とバーコード生成
             const resultSection = document.getElementById('resultSection');
-            const upcCode = upcaDigits.join('');
+            const upcCode = upcaDigits.join(''); // チェックディジット込み12桁
+            
             resultSection.classList.add('show');
 
             // 少し遅延してバーコード生成
@@ -890,18 +913,25 @@
         }
 
         function reset() {
-            document.getElementById('upceDisplay').innerHTML = '';
-            document.getElementById('upcaDisplay').innerHTML = '';
-            document.getElementById('arrow').classList.add('hidden');
-            document.getElementById('patternInfo').classList.remove('show');
-            document.getElementById('patternInfo').innerHTML = '&nbsp;';
-            document.getElementById('resultSection').classList.remove('show');
-            document.getElementById('barcodeDisplay').innerHTML = '';
+            const upceDisplay = document.getElementById('upceDisplay');
+            const upcaDisplay = document.getElementById('upcaDisplay');
+            const arrow = document.getElementById('arrow');
+            const patternInfo = document.getElementById('patternInfo');
+            const resultSection = document.getElementById('resultSection');
+            const barcodeDisplay = document.getElementById('barcodeDisplay');
+            
+            if (upceDisplay) upceDisplay.innerHTML = '';
+            if (upcaDisplay) upcaDisplay.innerHTML = '';
+            if (arrow) arrow.classList.add('hidden');
+            if (patternInfo) {
+                patternInfo.classList.remove('show');
+                patternInfo.innerHTML = '&nbsp;';
+            }
+            if (resultSection) resultSection.classList.remove('show');
+            if (barcodeDisplay) barcodeDisplay.innerHTML = '';
             document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
             
             // プレースホルダーを追加して高さを維持
-            const upceDisplay = document.getElementById('upceDisplay');
-            const upcaDisplay = document.getElementById('upcaDisplay');
             
             // 透明なプレースホルダーボックスを6個ずつ配置
             for (let i = 0; i < 6; i++) {
@@ -921,9 +951,24 @@
             }
         }
 
-        // ページ読み込み時に初期化
+        // JsBarcodeライブラリの読み込み確認
+        function checkJsBarcodeLoaded() {
+            if (typeof JsBarcode === 'undefined') {
+                console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
+                return false;
+            }
+            console.log('JsBarcode library loaded successfully');
+            return true;
+        }
+
+        // ページ読み込み時の初期化（DOMContentLoaded）
         window.addEventListener('DOMContentLoaded', () => {
             reset();
+        });
+
+        // ライブラリ読み込み確認（window.load）
+        window.addEventListener('load', () => {
+            checkJsBarcodeLoaded();
         });
 
         // 画面幅に応じて矢印の位置を調整
