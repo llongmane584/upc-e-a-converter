@@ -641,7 +641,7 @@
     <div class="input-section">
       <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
       <div class="digit-inputs">
-        <input type="text" class="digit-input" maxlength="1" id="p1" placeholder="X₁">
+        <input type="text" class="digit-input" maxlength="1" id="p1" placeholder="X₁" autofocus>
         <input type="text" class="digit-input" maxlength="1" id="p2" placeholder="X₂">
         <input type="text" class="digit-input" maxlength="1" id="p3" placeholder="X₃">
         <input type="text" class="digit-input" maxlength="1" id="p4" placeholder="X₄">
@@ -845,7 +845,7 @@
         }
       });
 
-      await sleep(200 / animationSpeed);
+      await sleep(500 / animationSpeed);
 
       // 6桁を同時に段階的変化
       upceBoxes.forEach((box, index) => {
@@ -862,7 +862,7 @@
         }, 50);
       });
 
-      await sleep(500 / animationSpeed);
+      //await sleep(500 / animationSpeed);
 
       // パターン情報表示
       const patternInfo = document.getElementById('patternInfo');
@@ -891,12 +891,12 @@
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
       document.getElementById(patternId).classList.add('active');
 
-      await sleep(1000 / animationSpeed);
+      await sleep(500 / animationSpeed);
 
       // 矢印表示
       document.getElementById('arrow').classList.remove('hidden');
 
-      await sleep(500 / animationSpeed);
+      await sleep(200 / animationSpeed);
 
       // UPC-A生成
       const upcaDisplay = document.getElementById('upcaDisplay');
@@ -943,6 +943,8 @@
         }, 50);
       }
 
+      await sleep(800 / animationSpeed);
+
       // 段階的表示: p1, p2, p3, p4, p5を1つずつ（元のUPC-E順序で）
       const sourceIndices = [];
       for (let i = 1; i < upcaDigits.length - 1; i++) {
@@ -958,6 +960,8 @@
         }
       }
 
+      await sleep(800 / animationSpeed);
+
       for (const index of sourceIndices) {
         await sleep(150 / animationSpeed);
         if (upcaBoxes[index]) {
@@ -968,6 +972,8 @@
           }, 50);
         }
       }
+
+      await sleep(800 / animationSpeed);
 
       // p6を表示（moved class）
       let p6Index = -1;
@@ -983,6 +989,8 @@
         }, 50);
       }
 
+      await sleep(800 / animationSpeed);
+
       // 0を1つずつ表示（先頭0以外）
       for (let i = 1; i < upcaBoxes.length - 1; i++) {
         if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
@@ -994,6 +1002,8 @@
           }, 50);
         }
       }
+
+      await sleep(800 / animationSpeed);
 
       // チェックディジットを表示
       await sleep(150 / animationSpeed);
