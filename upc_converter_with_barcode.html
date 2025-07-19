@@ -1,988 +1,1001 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPC-E → UPC-A 変換 with バーコード</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            max-width: 900px;
-            width: 100%;
-        }
-
-        /* モバイル対応 */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 20px;
-                border-radius: 15px;
-            }
-            
-            h1 {
-                font-size: 1.5em !important;
-            }
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2em;
-        }
-
-        .input-section {
-            margin-bottom: 40px;
-        }
-
-        .input-label {
-            display: block;
-            margin-bottom: 10px;
-            color: #666;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .input-label {
-                font-size: 14px;
-            }
-        }
-
-        .digit-inputs {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 480px) {
-            .digit-inputs {
-                gap: 5px;
-            }
-        }
-
-        .digit-input {
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
-            text-align: center;
-            border: 3px solid #ddd;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        @media (max-width: 480px) {
-            .digit-input {
-                width: 45px;
-                height: 45px;
-                font-size: 20px;
-                border-width: 2px;
-            }
-        }
-
-        .digit-input:focus {
-            outline: none;
-            border-color: #667eea;
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .digit-input.p6 {
-            border-color: #f59e0b;
-            background-color: #fef3c7;
-        }
-
-        .conversion-area {
-            min-height: 350px;
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-            /* スクロールバー防止 */
-            overflow-x: hidden;
-            overflow-y: hidden;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        @media (max-width: 768px) {
-            .conversion-area {
-                min-height: 300px;
-                padding: 20px;
-                margin-bottom: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .conversion-area {
-                padding: 2px;
-                min-height: 280px;
-            }
-        }
-
-        .pattern-info {
-            background: #e0e7ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-            color: #4c1d95;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            word-break: break-all;
-        }
-
-        @media (max-width: 768px) {
-            .pattern-info {
-                font-size: 14px;
-                padding: 12px;
-                min-height: auto;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .pattern-info {
-                font-size: 12px;
-                padding: 10px;
-            }
-        }
-
-        .pattern-info.show {
-            opacity: 1;
-        }
-
-        .barcode-display {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-            position: relative;
-            /* スクロール防止のための余白 */
-            padding: 0 10px;
-        }
-
-        @media (max-width: 768px) {
-            .barcode-display {
-                gap: 30px;
-                padding: 0;
-            }
-        }
-
-        .barcode-wrapper {
-            display: flex;
-            align-items: center;
-            position: relative;
-            min-height: 54px;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        @media (min-width: 481px) {
-            .barcode-wrapper {
-                flex-direction: row;
-                gap: 0;
-            }
-        }
-
-        .barcode-label {
-            font-size: 14px;
-            color: #666;
-            font-weight: 600;
-            width: auto;
-            text-align: center;
-        }
-
-        @media (min-width: 481px) {
-            .barcode-label {
-                position: absolute;
-                left: 0;
-                width: 80px;
-                text-align: left;
-            }
-        }
-
-        .barcode-row {
-            display: flex;
-            gap: 8px;
-            min-height: 54px;
-            align-items: center;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        @media (min-width: 481px) {
-            .barcode-row {
-                margin-left: 70px;
-                flex-wrap: nowrap;
-                justify-content: flex-start;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .barcode-row {
-                gap: 0px;
-            }
-        }
-
-        .digit-box {
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-            background: white;
-            position: relative;
-            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        @media (max-width: 768px) {
-            .digit-box {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .digit-box {
-                width: 26px;
-                height: 32px;
-                font-size: 14px;
-                border-radius: 6px;
-            }
-        }
-
-        .digit-box.source {
-            background: #dbeafe;
-            border-color: #3b82f6;
-        }
-
-        .digit-box.zero {
-            background: #dcfce7;
-            border-color: #22c55e;
-        }
-
-        .digit-box.moved {
-            background: #fef3c7;
-            border-color: #f59e0b;
-        }
-
-        .digit-box.check {
-            background: #fce7f3;
-            border-color: #ec4899;
-        }
-
-        .digit-box.animating {
-            animation: pulse 0.6s ease-out;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
-            }
-            50% {
-                transform: scale(1.1);
-                box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .arrow {
-            position: absolute;
-            font-size: 30px;
-            color: #667eea;
-            animation: bounce 1s infinite;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        @media (max-width: 768px) {
-            .arrow {
-                font-size: 24px;
-            }
-        }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: translateX(-50%) translateY(0);
-            }
-            50% {
-                transform: translateX(-50%) translateY(10px);
-            }
-        }
-
-        .controls {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 480px) {
-            .controls {
-                gap: 10px;
-                margin-bottom: 20px;
-            }
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        @media (max-width: 480px) {
-            .btn {
-                padding: 10px 20px;
-                font-size: 14px;
-            }
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .btn-secondary:hover {
-            background: #d1d5db;
-        }
-
-        .speed-control {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 480px) {
-            .speed-control {
-                gap: 10px;
-            }
-        }
-
-        .speed-slider {
-            width: 200px;
-            max-width: 100%;
-        }
-
-        @media (max-width: 480px) {
-            .speed-slider {
-                width: 150px;
-            }
-        }
-
-        .result-section {
-            text-align: center;
-            margin-top: 30px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        @media (max-width: 768px) {
-            .result-section {
-                margin-top: 20px;
-            }
-        }
-
-        .result-section.show {
-            opacity: 1;
-        }
-
-        .result-section h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 480px) {
-            .result-section h3 {
-                font-size: 16px;
-            }
-        }
-
-        .result-code {
-            font-size: 24px;
-            font-family: 'Courier New', monospace;
-            background: #f3f4f6;
-            padding: 15px 30px;
-            border-radius: 10px;
-            margin: 10px auto;
-            display: inline-block;
-            word-break: break-all;
-            max-width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            .result-code {
-                font-size: 20px;
-                padding: 12px 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .result-code {
-                font-size: 16px;
-                padding: 10px 15px;
-            }
-        }
-
-        /* バーコード表示エリアのスタイル */
-        .barcode-container {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px auto;
-            display: inline-block;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        .barcode-container.show {
-            opacity: 1;
-        }
-
-        @media (max-width: 768px) {
-            .barcode-container {
-                padding: 15px;
-                margin: 15px auto;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .barcode-container {
-                padding: 10px;
-                margin: 10px auto;
-                max-width: 100%;
-                overflow-x: auto;
-            }
-        }
-
-        .barcode-svg {
-            display: block;
-            margin: 0 auto;
-            max-width: 100%;
-            height: auto;
-        }
-
-        @media (max-width: 480px) {
-            .barcode-svg {
-                width: 100%;
-                min-width: 280px;
-            }
-        }
-
-        .pattern-table {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        @media (max-width: 768px) {
-            .pattern-table {
-                padding: 15px;
-                margin-top: 20px;
-            }
-        }
-
-        .pattern-table h3 {
-            margin-bottom: 15px;
-            color: #4b5563;
-            font-size: 18px;
-        }
-
-        @media (max-width: 480px) {
-            .pattern-table h3 {
-                font-size: 16px;
-                margin-bottom: 10px;
-            }
-        }
-
-        .pattern-row {
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            word-break: break-all;
-        }
-
-        @media (max-width: 768px) {
-            .pattern-row {
-                font-size: 12px;
-                padding: 8px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .pattern-row {
-                font-size: 11px;
-                padding: 6px;
-            }
-        }
-
-        .pattern-row.active {
-            background: #dbeafe;
-            border: 2px solid #3b82f6;
-            transform: scale(1.02);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .barcode-info {
-            background: #e8f4fd;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #1e40af;
-        }
-
-        @media (max-width: 480px) {
-            .barcode-info {
-                font-size: 11px;
-                padding: 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPC-E → UPC-A 変換 with バーコード</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 20px;
+        border-radius: 15px;
+      }
+
+      h1 {
+        font-size: 1.5em !important;
+      }
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2em;
+    }
+
+    .input-section {
+      margin-bottom: 40px;
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 10px;
+      color: #666;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .input-label {
+        font-size: 14px;
+      }
+    }
+
+    .digit-inputs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+      .digit-inputs {
+        gap: 5px;
+      }
+    }
+
+    .digit-input {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      text-align: center;
+      border: 3px solid #ddd;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    @media (max-width: 480px) {
+      .digit-input {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+        border-width: 2px;
+      }
+    }
+
+    .digit-input:focus {
+      outline: none;
+      border-color: #667eea;
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .digit-input.p6 {
+      border-color: #f59e0b;
+      background-color: #fef3c7;
+    }
+
+    .conversion-area {
+      min-height: 350px;
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+      /* スクロールバー防止 */
+      overflow-x: hidden;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 768px) {
+      .conversion-area {
+        min-height: 300px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .conversion-area {
+        padding: 2px;
+        min-height: 280px;
+      }
+    }
+
+    .pattern-info {
+      background: #e0e7ff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      color: #4c1d95;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      word-break: break-all;
+    }
+
+    @media (max-width: 768px) {
+      .pattern-info {
+        font-size: 14px;
+        padding: 12px;
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .pattern-info {
+        font-size: 12px;
+        padding: 10px;
+      }
+    }
+
+    .pattern-info.show {
+      opacity: 1;
+    }
+
+    .barcode-display {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      position: relative;
+      /* スクロール防止のための余白 */
+      padding: 0 10px;
+    }
+
+    @media (max-width: 768px) {
+      .barcode-display {
+        gap: 30px;
+        padding: 0;
+      }
+    }
+
+    .barcode-wrapper {
+      display: flex;
+      align-items: center;
+      position: relative;
+      min-height: 54px;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 481px) {
+      .barcode-wrapper {
+        flex-direction: row;
+        gap: 0;
+      }
+    }
+
+    .barcode-label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 600;
+      width: auto;
+      text-align: center;
+    }
+
+    @media (min-width: 481px) {
+      .barcode-label {
+        position: absolute;
+        left: 0;
+        width: 80px;
+        text-align: left;
+      }
+    }
+
+    .barcode-row {
+      display: flex;
+      gap: 8px;
+      min-height: 54px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    @media (min-width: 481px) {
+      .barcode-row {
+        margin-left: 70px;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .barcode-row {
+        gap: 0px;
+      }
+    }
+
+    .digit-box {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      background: white;
+      position: relative;
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @media (max-width: 768px) {
+      .digit-box {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .digit-box {
+        width: 26px;
+        height: 32px;
+        font-size: 14px;
+        border-radius: 6px;
+      }
+    }
+
+    .digit-box.source {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+
+    .digit-box.zero {
+      background: #dcfce7;
+      border-color: #22c55e;
+    }
+
+    .digit-box.moved {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+
+    .digit-box.check {
+      background: #fce7f3;
+      border-color: #ec4899;
+    }
+
+    .digit-box.animating {
+      animation: pulse 0.6s ease-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+      }
+
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .arrow {
+      position: absolute;
+      font-size: 30px;
+      color: #667eea;
+      animation: bounce 1s infinite;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    @media (max-width: 768px) {
+      .arrow {
+        font-size: 24px;
+      }
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(10px);
+      }
+    }
+
+    .controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+      .controls {
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 480px) {
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+      .speed-control {
+        gap: 10px;
+      }
+    }
+
+    .speed-slider {
+      width: 200px;
+      max-width: 100%;
+    }
+
+    @media (max-width: 480px) {
+      .speed-slider {
+        width: 150px;
+      }
+    }
+
+    .result-section {
+      text-align: center;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    @media (max-width: 768px) {
+      .result-section {
+        margin-top: 20px;
+      }
+    }
+
+    .result-section.show {
+      opacity: 1;
+    }
+
+    .result-section h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .result-section h3 {
+        font-size: 16px;
+      }
+    }
+
+    .result-code {
+      font-size: 24px;
+      font-family: 'Courier New', monospace;
+      background: #f3f4f6;
+      padding: 15px 30px;
+      border-radius: 10px;
+      margin: 10px auto;
+      display: inline-block;
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .result-code {
+        font-size: 20px;
+        padding: 12px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .result-code {
+        font-size: 16px;
+        padding: 10px 15px;
+      }
+    }
+
+    /* バーコード表示エリアのスタイル */
+    .barcode-container {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      display: inline-block;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .barcode-container.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .barcode-container {
+        padding: 15px;
+        margin: 15px auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .barcode-container {
+        padding: 10px;
+        margin: 10px auto;
+        max-width: 100%;
+        overflow-x: auto;
+      }
+    }
+
+    .barcode-svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 480px) {
+      .barcode-svg {
+        width: 100%;
+        min-width: 280px;
+      }
+    }
+
+    .pattern-table {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    @media (max-width: 768px) {
+      .pattern-table {
+        padding: 15px;
+        margin-top: 20px;
+      }
+    }
+
+    .pattern-table h3 {
+      margin-bottom: 15px;
+      color: #4b5563;
+      font-size: 18px;
+    }
+
+    @media (max-width: 480px) {
+      .pattern-table h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+    }
+
+    .pattern-row {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      word-break: break-all;
+    }
+
+    @media (max-width: 768px) {
+      .pattern-row {
+        font-size: 12px;
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .pattern-row {
+        font-size: 11px;
+        padding: 6px;
+      }
+    }
+
+    .pattern-row.active {
+      background: #dbeafe;
+      border: 2px solid #3b82f6;
+      transform: scale(1.02);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .barcode-info {
+      background: #e8f4fd;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    @media (max-width: 480px) {
+      .barcode-info {
+        font-size: 11px;
+        padding: 8px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>UPC-E → UPC-A 変換</h1>
-        
-        <div class="input-section">
-            <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
-            <div class="digit-inputs">
-                <input type="text" class="digit-input" maxlength="1" id="p1" placeholder="X₁">
-                <input type="text" class="digit-input" maxlength="1" id="p2" placeholder="X₂">
-                <input type="text" class="digit-input" maxlength="1" id="p3" placeholder="X₃">
-                <input type="text" class="digit-input" maxlength="1" id="p4" placeholder="X₄">
-                <input type="text" class="digit-input" maxlength="1" id="p5" placeholder="X₅">
-                <input type="text" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆">
-            </div>
-        </div>
+  <div class="container">
+    <h1>UPC-E → UPC-A 変換</h1>
 
-        <div class="controls">
-            <button class="btn btn-primary" onclick="startConversion()">変換開始</button>
-            <button class="btn btn-secondary" onclick="reset()">リセット</button>
-        </div>
-
-        <div class="speed-control">
-            <label>アニメーション速度：</label>
-            <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
-            <span id="speedValue">1x</span>
-        </div>
-
-        <div class="conversion-area">
-            <div class="pattern-info" id="patternInfo">&nbsp;</div>
-            
-            <div class="barcode-display">
-                <div class="barcode-wrapper">
-                    <span class="barcode-label">UPC-E:</span>
-                    <div class="barcode-row" id="upceDisplay"></div>
-                </div>
-                
-                <div class="arrow hidden" id="arrow" style="top: 50px;">↓</div>
-                
-                <div class="barcode-wrapper">
-                    <span class="barcode-label">UPC-A:</span>
-                    <div class="barcode-row" id="upcaDisplay"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="result-section" id="resultSection">
-            <h3>変換結果</h3>
-            
-            <!-- バーコード表示エリア（result-codeを置き換え） -->
-            <div class="result-code" id="resultCode">
-                <svg id="barcodeDisplay" class="barcode-svg"></svg>
-            </div>
-        </div>
-
-        <div class="pattern-table">
-            <h3>変換パターン一覧</h3>
-            <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 00000 + X₃X₄X₅ + C</div>
-            <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
-            <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
-            <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
-        </div>
+    <div class="input-section">
+      <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
+      <div class="digit-inputs">
+        <input type="text" class="digit-input" maxlength="1" id="p1" placeholder="X₁">
+        <input type="text" class="digit-input" maxlength="1" id="p2" placeholder="X₂">
+        <input type="text" class="digit-input" maxlength="1" id="p3" placeholder="X₃">
+        <input type="text" class="digit-input" maxlength="1" id="p4" placeholder="X₄">
+        <input type="text" class="digit-input" maxlength="1" id="p5" placeholder="X₅">
+        <input type="text" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆">
+      </div>
     </div>
 
-    <script>
-        let animationSpeed = 1;
-        
-        // 入力フィールドの自動フォーカス移動
-        document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
-            input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1 && index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                }
-            });
-            
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
-                    inputs[index - 1].focus();
-                }
-            });
-        });
+    <div class="controls">
+      <button class="btn btn-primary" onclick="startConversion()">変換開始</button>
+      <button class="btn btn-secondary" onclick="reset()">リセット</button>
+    </div>
 
-        // スピードスライダー
-        document.getElementById('speedSlider').addEventListener('input', (e) => {
-            animationSpeed = parseFloat(e.target.value);
-            document.getElementById('speedValue').textContent = animationSpeed + 'x';
-        });
+    <div class="speed-control">
+      <label>アニメーション速度：</label>
+      <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
+      <span id="speedValue">1x</span>
+    </div>
 
-        function calculateCheckDigit(digits) {
-            let sum = 0;
-            for (let i = 0; i < 11; i++) {
-                sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
-            }
-            return (10 - (sum % 10)) % 10;
+    <div class="conversion-area">
+      <div class="pattern-info" id="patternInfo">&nbsp;</div>
+
+      <div class="barcode-display">
+        <div class="barcode-wrapper">
+          <span class="barcode-label">UPC-E:</span>
+          <div class="barcode-row" id="upceDisplay"></div>
+        </div>
+
+        <div class="arrow hidden" id="arrow" style="top: 50px;">↓</div>
+
+        <div class="barcode-wrapper">
+          <span class="barcode-label">UPC-A:</span>
+          <div class="barcode-row" id="upcaDisplay"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-section" id="resultSection">
+      <h3>変換結果</h3>
+
+      <!-- バーコード表示エリア（result-codeを置き換え） -->
+      <div class="result-code" id="resultCode">
+        <svg id="barcodeDisplay" class="barcode-svg"></svg>
+      </div>
+    </div>
+
+    <div class="pattern-table">
+      <h3>変換パターン一覧</h3>
+      <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 00000 + X₃X₄X₅ + C</div>
+      <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
+      <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
+      <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
+    </div>
+  </div>
+
+  <script>
+    let animationSpeed = 1;
+
+    // 入力フィールドの自動フォーカス移動
+    document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < inputs.length - 1) {
+          inputs[index + 1].focus();
         }
+      });
 
-        function fallbackTextDisplay(upcCode) {
-            const resultCode = document.getElementById('resultCode');
-            resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+          inputs[index - 1].focus();
+        }
+      });
+
+      input.addEventListener('focus', (e) => {
+        e.target.select();
+      });
+    });
+
+    // スピードスライダー
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      animationSpeed = parseFloat(e.target.value);
+      document.getElementById('speedValue').textContent = animationSpeed + 'x';
+    });
+
+    function calculateCheckDigit(digits) {
+      let sum = 0;
+      for (let i = 0; i < 11; i++) {
+        sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
+      }
+      return (10 - (sum % 10)) % 10;
+    }
+
+    function fallbackTextDisplay(upcCode) {
+      const resultCode = document.getElementById('resultCode');
+      resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
                 <div style="margin-bottom: 10px; font-size: 18px; color: #666;">バーコード（テキスト表示）</div>
                 <div>${upcCode}</div>
             </div>`;
-        }
+    }
 
-        function generateBarcode(upcCode) {
-            // JsBarcodeライブラリの存在確認
-            if (typeof JsBarcode === 'undefined') {
-                console.warn('JsBarcode library not loaded, using fallback text display');
-                fallbackTextDisplay(upcCode);
-                return;
-            }
-            
-            // UPCコード桁数検証（12桁必須）
-            if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
-                console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
-                fallbackTextDisplay(upcCode);
-                return;
-            }
-            
-            try {
-                const svg = document.getElementById('barcodeDisplay');
-                
-                // SVGをクリア
-                svg.innerHTML = '';
-                
-                // JsBarcodeでバーコード生成
-                JsBarcode(svg, upcCode, {
-                    format: "UPC",
-                    width: 2,
-                    height: 80,
-                    lineColor: "#000000",
-                    background: "#ffffff",
-                    margin: 10,
-                    fontSize: 14,
-                    displayValue: true,
-                    fontOptions: "bold",
-                    textAlign: "center",
-                    textPosition: "bottom",
-                    textMargin: 2
-                });
-                
-            } catch (error) {
-                console.error('バーコード生成エラー:', error);
-                console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
-                // エラーの場合はフォールバック表示
-                fallbackTextDisplay(upcCode);
-            }
-        }
+    function generateBarcode(upcCode) {
+      // JsBarcodeライブラリの存在確認
+      if (typeof JsBarcode === 'undefined') {
+        console.warn('JsBarcode library not loaded, using fallback text display');
+        fallbackTextDisplay(upcCode);
+        return;
+      }
 
-        async function startConversion() {
-            const p1 = document.getElementById('p1').value;
-            const p2 = document.getElementById('p2').value;
-            const p3 = document.getElementById('p3').value;
-            const p4 = document.getElementById('p4').value;
-            const p5 = document.getElementById('p5').value;
-            const p6 = document.getElementById('p6').value;
+      // UPCコード桁数検証（12桁必須）
+      if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
+        console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
+        fallbackTextDisplay(upcCode);
+        return;
+      }
 
-            if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
-                alert('すべての桁を入力してください');
-                return;
-            }
+      try {
+        const svg = document.getElementById('barcodeDisplay');
 
-            // 数字チェック
-            if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) || 
-                !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
-                alert('数字のみを入力してください');
-                return;
-            }
+        // SVGをクリア
+        svg.innerHTML = '';
 
-            // リセット
-            reset();
-            
-            // UPC-E表示
-            const upceDisplay = document.getElementById('upceDisplay');
-            upceDisplay.innerHTML = '';
-            
-            const upceDigits = [p1, p2, p3, p4, p5, p6];
-            upceDigits.forEach((digit, index) => {
-                const box = createDigitBox(digit, index < 5 ? 'source' : 'moved');
-                upceDisplay.appendChild(box);
-            });
-
-            await sleep(500 / animationSpeed);
-
-            // パターン情報表示
-            const patternInfo = document.getElementById('patternInfo');
-            const p6Value = parseInt(p6);
-            let pattern = '';
-            let patternId = '';
-            
-            if (p6Value >= 0 && p6Value <= 2) {
-                pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 00000 + ${p3}${p4}${p5} + C`;
-                patternId = 'pattern0';
-            } else if (p6Value === 3) {
-                pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
-                patternId = 'pattern3';
-            } else if (p6Value === 4) {
-                pattern = `P6 = 4 のパターン: 0 + ${p1}${p2}${p3}${p4} + 00000 + ${p5} + C`;
-                patternId = 'pattern4';
-            } else {
-                pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2}${p3}${p4}${p5} + 0000 + ${p6} + C`;
-                patternId = 'pattern5';
-            }
-            
-            patternInfo.textContent = pattern;
-            patternInfo.classList.add('show');
-            
-            // パターンテーブルのハイライト
-            document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
-            document.getElementById(patternId).classList.add('active');
-
-            await sleep(1000 / animationSpeed);
-
-            // 矢印表示
-            document.getElementById('arrow').classList.remove('hidden');
-
-            await sleep(500 / animationSpeed);
-
-            // UPC-A生成
-            const upcaDisplay = document.getElementById('upcaDisplay');
-            upcaDisplay.innerHTML = '';
-            
-            let upcaDigits = [];
-            
-            // 先頭の0
-            upcaDigits.push('0');
-            
-            // パターンに応じた変換
-            if (p6Value >= 0 && p6Value <= 2) {
-                upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
-            } else if (p6Value === 3) {
-                upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
-            } else if (p6Value === 4) {
-                upcaDigits.push(p1, p2, p3, p4, '0', '0', '0', '0', '0', p5);
-            } else {
-                upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
-            }
-            
-            // チェックディジット計算
-            const checkDigit = calculateCheckDigit(upcaDigits);
-            upcaDigits.push(checkDigit.toString());
-
-            // アニメーション付きで表示
-            for (let i = 0; i < upcaDigits.length; i++) {
-                const digit = upcaDigits[i];
-                let className = '';
-                
-                if (i === 0) className = 'zero';
-                else if (i === upcaDigits.length - 1) className = 'check';
-                else if (digit === '0' && i >= 3 && i <= 10) className = 'zero';
-                else {
-                    // P6由来の数字かチェック
-                    if ((p6Value >= 0 && p6Value <= 2) && i === 3) {
-                        className = 'moved'; // P6が変換された位置
-                    } else if (p6Value >= 5 && p6Value <= 9 && i === 10) {
-                        className = 'moved'; // P6がそのまま移動した位置
-                    } else {
-                        className = 'source';
-                    }
-                }
-                
-                const box = createDigitBox(digit, className);
-                box.style.opacity = '0';
-                upcaDisplay.appendChild(box);
-                
-                await sleep(100 / animationSpeed);
-                box.style.opacity = '1';
-                box.classList.add('animating');
-            }
-
-            await sleep(1000 / animationSpeed);
-
-            // 結果表示とバーコード生成
-            const resultSection = document.getElementById('resultSection');
-            const upcCode = upcaDigits.join(''); // チェックディジット込み12桁
-            
-            resultSection.classList.add('show');
-
-            // 少し遅延してバーコード生成
-            await sleep(500 / animationSpeed);
-            generateBarcode(upcCode);
-        }
-
-        function createDigitBox(digit, className) {
-            const box = document.createElement('div');
-            box.classList.add('digit-box', className);
-            box.textContent = digit;
-            return box;
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        function reset() {
-            const upceDisplay = document.getElementById('upceDisplay');
-            const upcaDisplay = document.getElementById('upcaDisplay');
-            const arrow = document.getElementById('arrow');
-            const patternInfo = document.getElementById('patternInfo');
-            const resultSection = document.getElementById('resultSection');
-            const barcodeDisplay = document.getElementById('barcodeDisplay');
-            
-            if (upceDisplay) upceDisplay.innerHTML = '';
-            if (upcaDisplay) upcaDisplay.innerHTML = '';
-            if (arrow) arrow.classList.add('hidden');
-            if (patternInfo) {
-                patternInfo.classList.remove('show');
-                patternInfo.innerHTML = '&nbsp;';
-            }
-            if (resultSection) resultSection.classList.remove('show');
-            if (barcodeDisplay) barcodeDisplay.innerHTML = '';
-            document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
-            
-            // プレースホルダーを追加して高さを維持
-            
-            // 透明なプレースホルダーボックスを6個ずつ配置
-            for (let i = 0; i < 6; i++) {
-                const placeholderE = document.createElement('div');
-                placeholderE.classList.add('digit-box');
-                placeholderE.style.opacity = '0';
-                placeholderE.style.visibility = 'hidden';
-                upceDisplay.appendChild(placeholderE);
-            }
-            
-            for (let i = 0; i < 12; i++) {
-                const placeholderA = document.createElement('div');
-                placeholderA.classList.add('digit-box');
-                placeholderA.style.opacity = '0';
-                placeholderA.style.visibility = 'hidden';
-                upcaDisplay.appendChild(placeholderA);
-            }
-        }
-
-        // JsBarcodeライブラリの読み込み確認
-        function checkJsBarcodeLoaded() {
-            if (typeof JsBarcode === 'undefined') {
-                console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
-                return false;
-            }
-            console.log('JsBarcode library loaded successfully');
-            return true;
-        }
-
-        // ページ読み込み時の初期化（DOMContentLoaded）
-        window.addEventListener('DOMContentLoaded', () => {
-            reset();
+        // JsBarcodeでバーコード生成
+        JsBarcode(svg, upcCode, {
+          format: "UPC",
+          width: 2,
+          height: 80,
+          lineColor: "#000000",
+          background: "#ffffff",
+          margin: 10,
+          fontSize: 14,
+          displayValue: true,
+          fontOptions: "bold",
+          textAlign: "center",
+          textPosition: "bottom",
+          textMargin: 2
         });
 
-        // ライブラリ読み込み確認（window.load）
-        window.addEventListener('load', () => {
-            checkJsBarcodeLoaded();
-        });
+      } catch (error) {
+        console.error('バーコード生成エラー:', error);
+        console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
+        // エラーの場合はフォールバック表示
+        fallbackTextDisplay(upcCode);
+      }
+    }
 
-        // 画面幅に応じて矢印の位置を調整
-        function adjustArrowPosition() {
-            const arrow = document.getElementById('arrow');
-            if (window.innerWidth <= 480) {
-                arrow.style.top = '70px';
-            } else {
-                arrow.style.top = '45px';
-            }
+    async function startConversion() {
+      const p1 = document.getElementById('p1').value;
+      const p2 = document.getElementById('p2').value;
+      const p3 = document.getElementById('p3').value;
+      const p4 = document.getElementById('p4').value;
+      const p5 = document.getElementById('p5').value;
+      const p6 = document.getElementById('p6').value;
+
+      if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
+        alert('すべての桁を入力してください');
+        return;
+      }
+
+      // 数字チェック
+      if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) ||
+        !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
+        alert('数字のみを入力してください');
+        return;
+      }
+
+      // リセット
+      reset();
+
+      // UPC-E表示
+      const upceDisplay = document.getElementById('upceDisplay');
+      upceDisplay.innerHTML = '';
+
+      const upceDigits = [p1, p2, p3, p4, p5, p6];
+      upceDigits.forEach((digit, index) => {
+        const box = createDigitBox(digit, index < 5 ? 'source' : 'moved');
+        upceDisplay.appendChild(box);
+      });
+
+      await sleep(500 / animationSpeed);
+
+      // パターン情報表示
+      const patternInfo = document.getElementById('patternInfo');
+      const p6Value = parseInt(p6);
+      let pattern = '';
+      let patternId = '';
+
+      if (p6Value >= 0 && p6Value <= 2) {
+        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 00000 + ${p3}${p4}${p5} + C`;
+        patternId = 'pattern0';
+      } else if (p6Value === 3) {
+        pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
+        patternId = 'pattern3';
+      } else if (p6Value === 4) {
+        pattern = `P6 = 4 のパターン: 0 + ${p1}${p2}${p3}${p4} + 00000 + ${p5} + C`;
+        patternId = 'pattern4';
+      } else {
+        pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2}${p3}${p4}${p5} + 0000 + ${p6} + C`;
+        patternId = 'pattern5';
+      }
+
+      patternInfo.textContent = pattern;
+      patternInfo.classList.add('show');
+
+      // パターンテーブルのハイライト
+      document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
+      document.getElementById(patternId).classList.add('active');
+
+      await sleep(1000 / animationSpeed);
+
+      // 矢印表示
+      document.getElementById('arrow').classList.remove('hidden');
+
+      await sleep(500 / animationSpeed);
+
+      // UPC-A生成
+      const upcaDisplay = document.getElementById('upcaDisplay');
+      upcaDisplay.innerHTML = '';
+
+      let upcaDigits = [];
+
+      // 先頭の0
+      upcaDigits.push('0');
+
+      // パターンに応じた変換
+      if (p6Value >= 0 && p6Value <= 2) {
+        upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
+      } else if (p6Value === 3) {
+        upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
+      } else if (p6Value === 4) {
+        upcaDigits.push(p1, p2, p3, p4, '0', '0', '0', '0', '0', p5);
+      } else {
+        upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
+      }
+
+      // チェックディジット計算
+      const checkDigit = calculateCheckDigit(upcaDigits);
+      upcaDigits.push(checkDigit.toString());
+
+      // アニメーション付きで表示
+      for (let i = 0; i < upcaDigits.length; i++) {
+        const digit = upcaDigits[i];
+        let className = '';
+
+        if (i === 0) className = 'zero';
+        else if (i === upcaDigits.length - 1) className = 'check';
+        else if (digit === '0' && i >= 3 && i <= 10) className = 'zero';
+        else {
+          // P6由来の数字かチェック
+          if ((p6Value >= 0 && p6Value <= 2) && i === 3) {
+            className = 'moved'; // P6が変換された位置
+          } else if (p6Value >= 5 && p6Value <= 9 && i === 10) {
+            className = 'moved'; // P6がそのまま移動した位置
+          } else {
+            className = 'source';
+          }
         }
 
-        window.addEventListener('resize', adjustArrowPosition);
-        window.addEventListener('DOMContentLoaded', adjustArrowPosition);
-    </script>
+        const box = createDigitBox(digit, className);
+        box.style.opacity = '0';
+        upcaDisplay.appendChild(box);
+
+        await sleep(100 / animationSpeed);
+        box.style.opacity = '1';
+        box.classList.add('animating');
+      }
+
+      await sleep(1000 / animationSpeed);
+
+      // 結果表示とバーコード生成
+      const resultSection = document.getElementById('resultSection');
+      const upcCode = upcaDigits.join(''); // チェックディジット込み12桁
+
+      resultSection.classList.add('show');
+
+      // 少し遅延してバーコード生成
+      await sleep(500 / animationSpeed);
+      generateBarcode(upcCode);
+    }
+
+    function createDigitBox(digit, className) {
+      const box = document.createElement('div');
+      box.classList.add('digit-box', className);
+      box.textContent = digit;
+      return box;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function reset() {
+      const upceDisplay = document.getElementById('upceDisplay');
+      const upcaDisplay = document.getElementById('upcaDisplay');
+      const arrow = document.getElementById('arrow');
+      const patternInfo = document.getElementById('patternInfo');
+      const resultSection = document.getElementById('resultSection');
+      const barcodeDisplay = document.getElementById('barcodeDisplay');
+
+      if (upceDisplay) upceDisplay.innerHTML = '';
+      if (upcaDisplay) upcaDisplay.innerHTML = '';
+      if (arrow) arrow.classList.add('hidden');
+      if (patternInfo) {
+        patternInfo.classList.remove('show');
+        patternInfo.innerHTML = '&nbsp;';
+      }
+      if (resultSection) resultSection.classList.remove('show');
+      if (barcodeDisplay) barcodeDisplay.innerHTML = '';
+      document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
+
+      // プレースホルダーを追加して高さを維持
+
+      // 透明なプレースホルダーボックスを6個ずつ配置
+      for (let i = 0; i < 6; i++) {
+        const placeholderE = document.createElement('div');
+        placeholderE.classList.add('digit-box');
+        placeholderE.style.opacity = '0';
+        placeholderE.style.visibility = 'hidden';
+        upceDisplay.appendChild(placeholderE);
+      }
+
+      for (let i = 0; i < 12; i++) {
+        const placeholderA = document.createElement('div');
+        placeholderA.classList.add('digit-box');
+        placeholderA.style.opacity = '0';
+        placeholderA.style.visibility = 'hidden';
+        upcaDisplay.appendChild(placeholderA);
+      }
+    }
+
+    // JsBarcodeライブラリの読み込み確認
+    function checkJsBarcodeLoaded() {
+      if (typeof JsBarcode === 'undefined') {
+        console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
+        return false;
+      }
+      //console.log('JsBarcode library loaded successfully');
+      return true;
+    }
+
+    // ページ読み込み時の初期化（DOMContentLoaded）
+    window.addEventListener('DOMContentLoaded', () => {
+      reset();
+    });
+
+    // ライブラリ読み込み確認（window.load）
+    window.addEventListener('load', () => {
+      checkJsBarcodeLoaded();
+    });
+
+    // 画面幅に応じて矢印の位置を調整
+    function adjustArrowPosition() {
+      const arrow = document.getElementById('arrow');
+      if (window.innerWidth <= 480) {
+        arrow.style.top = '70px';
+      } else {
+        arrow.style.top = '45px';
+      }
+    }
+
+    window.addEventListener('resize', adjustArrowPosition);
+    window.addEventListener('DOMContentLoaded', adjustArrowPosition);
+  </script>
 </body>
+
 </html>
