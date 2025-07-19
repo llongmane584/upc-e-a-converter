@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Development Workflow (Issue-based)
+- Planning: Create improvement plan and discuss approach
+- Documentation: Once approved, add detailed implementation plan as comment to the issue (`gh issue comment`)
+  - ** clearly marked as Claude Code generated with text `🤖 Generated with [Claude Code]`
+- Branching: Create appropriately named feature branch
+- Implementation: Write code following project standards
+- Testing: Validate functionality in .venv environment
+- Integration: Commit, push, and create pull request for review
+
+### Issue Workflow Commands
+- Comment on issue: `gh issue comment <issue-number> --body "Comment text"`
+- Link to PR: `gh issue edit <issue-number> --add-label "linked-pr"`
+- Set milestone: `gh issue edit <issue-number> --milestone "v1.0"`
+
 ## GitHub repository information
 - Please reference the `.git/config` file to retrieve the repository URL from the `[remote "origin"]` section
 - You can verify the remote URL using the `git config --get remote.origin.url` command
@@ -29,17 +43,3 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Use `gh auth status` to verify authentication
 - When working with issues, always specify issue numbers clearly
 
-# Development Workflow (Issue-based)
-
-- Planning: Create improvement plan and discuss approach
-- Documentation: Once approved, add detailed implementation plan as comment to the issue (`gh issue comment`)
-  - ** clearly marked as Claude Code generated with text `🤖 Generated with [Claude Code]`
-- Branching: Create appropriately named feature branch
-- Implementation: Write code following project standards
-- Testing: Validate functionality in .venv environment
-- Integration: Commit, push, and create pull request for review
-
-### Issue Workflow Commands
-- Comment on issue: `gh issue comment <issue-number> --body "Comment text"`
-- Link to PR: `gh issue edit <issue-number> --add-label "linked-pr"`
-- Set milestone: `gh issue edit <issue-number> --milestone "v1.0"`
