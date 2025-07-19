@@ -6,15 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UPC-E → UPC-A 変換 with バーコード</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p&family=Noto+Sans+JP:wght@100..900&display=swap"
+    rel="stylesheet">
+
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: 'Noto Sans JP', sans-serif;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
@@ -694,6 +700,13 @@
       <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
       <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
       <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
+      <hr>
+      <div style="margin-top: 15px; text-align: left; font-size: 14px;"><span style="margin-right:0.2rem;">📖 参照:</span>
+        <a href="https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf" target="_blank"
+          style="color: #667eea; text-decoration: none; ">
+          GS1 General Specifications (PDF)
+        </a>
+      </div>
     </div>
   </div>
 
