@@ -29,6 +29,104 @@
         padding: 20px;
       }
 
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      @media (max-width: 767px) {
+        .toast-container {
+          left: 50%;
+          right: auto;
+          transform: translateX(-50%);
+          width: 90%;
+          max-width: 350px;
+        }
+      }
+
+      .toast {
+        padding: 16px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideIn 0.3s ease-out forwards;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      @media (max-width: 767px) {
+        .toast {
+          padding: 12px 20px;
+          font-size: 14px;
+        }
+      }
+
+      .toast.error {
+        background-color: #dc3545;
+      }
+
+      .toast.success {
+        background-color: #28a745;
+      }
+
+      .toast.fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 767px) {
+        @keyframes slideIn {
+          from {
+            transform: translateY(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeOut {
+          from {
+            transform: translateY(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateY(-100%);
+            opacity: 0;
+          }
+        }
+      }
+
       .container {
         background: white;
         border-radius: 20px;
@@ -353,6 +451,10 @@
         transform: translateX(-50%);
       }
 
+      .arrow.no-animation {
+        animation: none;
+      }
+
       @media (max-width: 767px) {
         .arrow {
           font-size: 24px;
@@ -632,6 +734,7 @@
   </head>
 
   <body>
+    <div class="toast-container" id="toastContainer"></div>
     <div class="container">
       <h1>UPC-E → UPC-A 変換</h1>
 
@@ -709,6 +812,27 @@
 
     <script>
       let animationSpeed = 1;
+
+      function showToast(message, type = 'error') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        
+        toast.addEventListener('click', () => {
+          toast.classList.add('fade-out');
+          setTimeout(() => toast.remove(), 300);
+        });
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+          if (toast.parentElement) {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+          }
+        }, 3000);
+      }
 
     document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
       input.addEventListener('input', (e) => {
@@ -819,13 +943,13 @@
       const p6 = document.getElementById('p6').value;
 
         if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
-        alert('すべての桁を入力してください');
+        showToast('すべての桁を入力してください', 'error');
           return;
         }
 
       if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) ||
         !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
-        alert('数字のみを入力してください');
+        showToast('数字のみを入力してください', 'error');
           return;
         }
 
@@ -1058,7 +1182,10 @@
           }
         }
 
-      if (arrow) arrow.classList.add('hidden');
+      if (arrow) {
+        arrow.classList.add('hidden');
+        arrow.classList.remove('no-animation');
+      }
         if (patternInfo) {
         patternInfo.classList.remove('show');
         patternInfo.innerHTML = '&nbsp;';
@@ -1080,6 +1207,9 @@
         document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
         const speedSlider = document.getElementById('speedSlider');
         if (speedSlider) speedSlider.disabled = false;
+        
+        const arrow = document.getElementById('arrow');
+        if (arrow) arrow.classList.add('no-animation');
       }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -1089,9 +1219,9 @@
       function adjustArrowPosition() {
       const arrow = document.getElementById('arrow');
         if (window.innerWidth <= 767) {
-        arrow.style.top = '70px';
+        arrow.style.top = '75px';
         } else {
-        arrow.style.top = '45px';
+        arrow.style.top = '50px';
         }
       }
 
