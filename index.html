@@ -9,7 +9,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p&family=Noto+Sans+JP:wght@100..900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap"
     rel="stylesheet">
 
     <style>
@@ -38,7 +38,6 @@
         width: 100%;
       }
 
-      /* モバイル対応 */
       @media (max-width: 767px) {
         body {
           padding: 4px;
@@ -131,7 +130,6 @@
         background-color: #fef3c7;
       }
 
-      /* スピンボタンを非表示 */
       .digit-input::-webkit-inner-spin-button,
       .digit-input::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -150,7 +148,6 @@
         margin-bottom: 30px;
         position: relative;
         overflow: hidden;
-        /* スクロールバー防止 */
         overflow-x: hidden;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
@@ -158,16 +155,9 @@
 
       @media (max-width: 767px) {
         .conversion-area {
-          min-height: 300px;
-          padding: 20px;
-          margin-bottom: 20px;
-        }
-      }
-
-      @media (max-width: 767px) {
-        .conversion-area {
           padding: 2px;
           min-height: 280px;
+          margin-bottom: 20px;
         }
       }
 
@@ -190,16 +180,9 @@
 
       @media (max-width: 767px) {
         .pattern-info {
-          font-size: 14px;
-          padding: 12px;
-          min-height: auto;
-        }
-      }
-
-      @media (max-width: 767px) {
-        .pattern-info {
           font-size: 12px;
           padding: 10px;
+          min-height: auto;
         }
       }
 
@@ -212,7 +195,6 @@
         flex-direction: column;
         gap: 40px;
         position: relative;
-        /* スクロール防止のための余白 */
         padding: 0 10px;
       }
 
@@ -292,14 +274,6 @@
         background: white;
         position: relative;
         transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      }
-
-      @media (max-width: 767px) {
-        .digit-box {
-          width: 40px;
-          height: 40px;
-          font-size: 18px;
-        }
       }
 
       @media (max-width: 767px) {
@@ -547,7 +521,6 @@
         }
       }
 
-      /* バーコード表示エリアのスタイル */
       .barcode-container {
         background: white;
         border: 2px solid #e5e7eb;
@@ -655,23 +628,6 @@
       .hidden {
         display: none;
       }
-
-      .barcode-info {
-        background: #e8f4fd;
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 10px;
-        font-size: 12px;
-        color: #1e40af;
-      }
-
-      @media (max-width: 767px) {
-        .barcode-info {
-          font-size: 11px;
-          padding: 8px;
-        }
-      }
     </style>
   </head>
 
@@ -754,13 +710,10 @@
     <script>
       let animationSpeed = 1;
 
-      // 入力フィールドの自動フォーカス移動
     document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
       input.addEventListener('input', (e) => {
-            // 数字以外の文字を除去
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
         
-            // 最大1文字に制限
             if (e.target.value.length > 1) {
               e.target.value = e.target.value.slice(0, 1);
             }
@@ -771,24 +724,21 @@
           });
 
       input.addEventListener('keydown', (e) => {
-            // 許可するキー: 数字(0-9), Backspace, Delete, Tab, Arrow keys, Enter
             const allowedKeys = [
           'Backspace', 'Delete', 'Tab', 'Enter',
           'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
           'Home', 'End'
             ];
 
-            // 数字キー(0-9)または許可されたキーの場合は通す
             const isDigit = /^[0-9]$/.test(e.key);
             const isAllowedKey = allowedKeys.includes(e.key);
-            const isCtrlKey = e.ctrlKey || e.metaKey; // Ctrl+A, Ctrl+C等を許可
+            const isCtrlKey = e.ctrlKey || e.metaKey;
 
             if (!isDigit && !isAllowedKey && !isCtrlKey) {
               e.preventDefault();
               return;
             }
 
-            // Backspaceでの前フィールドへの移動
         if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
               inputs[index - 1].focus();
             }
@@ -799,7 +749,6 @@
           });
         });
 
-      // スピードスライダー
     document.getElementById('speedSlider').addEventListener('input', (e) => {
         animationSpeed = parseFloat(e.target.value);
       document.getElementById('speedValue').textContent = animationSpeed + 'x';
@@ -822,14 +771,12 @@
       }
 
       function generateBarcode(upcCode) {
-        // JsBarcodeライブラリの存在確認
       if (typeof JsBarcode === 'undefined') {
         console.warn('JsBarcode library not loaded, using fallback text display');
           fallbackTextDisplay(upcCode);
           return;
         }
 
-        // UPCコード桁数検証（12桁必須）
         if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
         console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
           fallbackTextDisplay(upcCode);
@@ -839,10 +786,8 @@
         try {
         const svg = document.getElementById('barcodeDisplay');
 
-          // SVGをクリア
         svg.innerHTML = '';
 
-          // JsBarcodeでバーコード生成
           JsBarcode(svg, upcCode, {
             format: "UPC",
             width: 2,
@@ -861,7 +806,6 @@
         } catch (error) {
         console.error('バーコード生成エラー:', error);
         console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
-          // エラーの場合はフォールバック表示
           fallbackTextDisplay(upcCode);
         }
       }
@@ -879,28 +823,23 @@
           return;
         }
 
-        // 数字チェック
       if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) ||
         !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
         alert('数字のみを入力してください');
           return;
         }
 
-        // UI要素を無効化
         disableUIElements();
 
         try {
-        // リセット
         reset();
 
-        // UPC-E表示（6桁同時に徐々に変化）
       const upceDisplay = document.getElementById('upceDisplay');
       const existingPlaceholders = upceDisplay.querySelectorAll('.digit-box.placeholder');
 
         const upceDigits = [p1, p2, p3, p4, p5, p6];
         const upceBoxes = [];
 
-        // プレースホルダーを段階的に変更（置換なし）
         upceDigits.forEach((digit, index) => {
           const placeholder = existingPlaceholders[index];
           if (placeholder) {
@@ -910,24 +849,18 @@
 
         await sleep(500 / animationSpeed);
 
-        // 6桁を同時に段階的変化
         upceBoxes.forEach((box, index) => {
           const digit = upceDigits[index];
         const className = index < 5 ? 'source' : 'moved';
 
-          // テキストを設定
           box.textContent = digit;
 
-          // 短い遅延後に色を変更
           setTimeout(() => {
             box.className = `digit-box ${className}`;
           box.classList.add('animating');
           }, 50);
         });
 
-        //await sleep(500 / animationSpeed);
-
-        // パターン情報表示
       const patternInfo = document.getElementById('patternInfo');
         const p6Value = parseInt(p6);
       let pattern = '';
@@ -950,27 +883,22 @@
         patternInfo.textContent = pattern;
       patternInfo.classList.add('show');
 
-        // パターンテーブルのハイライト
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
       document.getElementById(patternId).classList.add('active');
 
         await sleep(500 / animationSpeed);
 
-        // 矢印表示
       document.getElementById('arrow').classList.remove('hidden');
 
         await sleep(200 / animationSpeed);
 
-        // UPC-A生成
       const upcaDisplay = document.getElementById('upcaDisplay');
       const existingUpcaPlaceholders = upcaDisplay.querySelectorAll('.digit-box.placeholder');
 
         let upcaDigits = [];
 
-        // 先頭の0
       upcaDigits.push('0');
 
-        // パターンに応じた変換
         if (p6Value >= 0 && p6Value <= 2) {
         upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
         } else if (p6Value === 3) {
@@ -981,14 +909,11 @@
         upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
         }
 
-        // チェックディジット計算
         const checkDigit = calculateCheckDigit(upcaDigits);
         upcaDigits.push(checkDigit.toString());
 
-        // 段階的変化表示（プレースホルダーから徐々に変更）
         const upcaBoxes = [];
 
-        // プレースホルダーを段階的に変更する準備
         for (let i = 0; i < upcaDigits.length; i++) {
           const placeholder = existingUpcaPlaceholders[i];
           if (placeholder) {
@@ -996,7 +921,6 @@
           }
         }
 
-        // 最初に先頭0を表示
         await sleep(150 / animationSpeed);
         if (upcaBoxes[0]) {
           upcaBoxes[0].textContent = upcaDigits[0];
@@ -1008,11 +932,9 @@
 
         await sleep(800 / animationSpeed);
 
-        // 段階的表示: p1, p2, p3, p4, p5を1つずつ（元のUPC-E順序で）
         const sourceIndices = [];
         for (let i = 1; i < upcaDigits.length - 1; i++) {
         if (upcaDigits[i] !== '0') {
-            // moved判定のためのクラス名を事前計算
             let willBeMoved = false;
           if ((p6Value >= 0 && p6Value <= 2) && i === 3) willBeMoved = true;
           else if (p6Value >= 5 && p6Value <= 9 && i === 10) willBeMoved = true;
@@ -1038,7 +960,6 @@
 
         await sleep(800 / animationSpeed);
 
-        // p6を表示（moved class）
         let p6Index = -1;
         if (p6Value >= 0 && p6Value <= 2) p6Index = 3;
         else if (p6Value >= 5 && p6Value <= 9) p6Index = 10;
@@ -1054,7 +975,6 @@
 
         await sleep(800 / animationSpeed);
 
-        // 0を1つずつ表示（先頭0以外）
         for (let i = 1; i < upcaBoxes.length - 1; i++) {
         if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
             await sleep(100 / animationSpeed);
@@ -1068,7 +988,6 @@
 
         await sleep(800 / animationSpeed);
 
-        // チェックディジットを表示
         await sleep(150 / animationSpeed);
         const lastBox = upcaBoxes[upcaBoxes.length - 1];
         if (lastBox) {
@@ -1081,26 +1000,16 @@
 
         await sleep(1000 / animationSpeed);
 
-        // 結果表示とバーコード生成
       const resultSection = document.getElementById('resultSection');
-      const upcCode = upcaDigits.join(''); // チェックディジット込み12桁
+      const upcCode = upcaDigits.join('');
 
       resultSection.classList.add('show');
 
-        // 少し遅延してバーコード生成
         await sleep(500 / animationSpeed);
         generateBarcode(upcCode);
         } finally {
-          // UI要素を再有効化
           enableUIElements();
         }
-      }
-
-      function createDigitBox(digit, className) {
-      const box = document.createElement('div');
-      box.classList.add('digit-box', className);
-        box.textContent = digit;
-        return box;
       }
 
       function sleep(ms) {
@@ -1115,10 +1024,8 @@
       const resultSection = document.getElementById('resultSection');
       const barcodeDisplay = document.getElementById('barcodeDisplay');
 
-        // 既存要素をプレースホルダーに変換またはクリア（innerHTML使用回避）
         if (upceDisplay) {
         const existingBoxes = upceDisplay.querySelectorAll('.digit-box');
-          // 既存要素をプレースホルダーに変換
         existingBoxes.forEach(box => {
           box.className = 'digit-box placeholder';
           box.textContent = '';
@@ -1126,7 +1033,6 @@
           box.style.visibility = 'visible';
           });
 
-          // 不足分を追加
           const needed = 6 - existingBoxes.length;
           for (let i = 0; i < needed; i++) {
           const placeholderE = document.createElement('div');
@@ -1137,7 +1043,6 @@
 
         if (upcaDisplay) {
         const existingBoxes = upcaDisplay.querySelectorAll('.digit-box');
-          // 既存要素をプレースホルダーに変換
         existingBoxes.forEach(box => {
           box.className = 'digit-box placeholder';
           box.textContent = '';
@@ -1145,7 +1050,6 @@
           box.style.visibility = 'visible';
           });
 
-          // 不足分を追加
           const needed = 12 - existingBoxes.length;
           for (let i = 0; i < needed; i++) {
           const placeholderA = document.createElement('div');
@@ -1164,77 +1068,24 @@
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
       }
 
-      // JsBarcodeライブラリの読み込み確認
       function disableUIElements() {
-        // 入力フィールドを無効化
-        document.querySelectorAll('.digit-input').forEach(input => {
-          input.disabled = true;
-        });
-        
-        // 変換開始ボタンを無効化
-        const convertButton = document.querySelector('button[onclick="startConversion()"]');
-        if (convertButton) {
-          convertButton.disabled = true;
-        }
-
-        // リセットボタンを無効化
-        const resettButton = document.querySelector('button[onclick="reset()"]');
-        if (resettButton) {
-          resettButton.disabled = true;
-        }
-        
-        // スピードスライダーを無効化
+        document.querySelectorAll('.digit-input').forEach(input => input.disabled = true);
+        document.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
         const speedSlider = document.getElementById('speedSlider');
-        if (speedSlider) {
-          speedSlider.disabled = true;
-        }
+        if (speedSlider) speedSlider.disabled = true;
       }
 
       function enableUIElements() {
-        // 入力フィールドを有効化
-        document.querySelectorAll('.digit-input').forEach(input => {
-          input.disabled = false;
-        });
-        
-        // 変換開始ボタンを有効化
-        const convertButton = document.querySelector('button[onclick="startConversion()"]');
-        if (convertButton) {
-          convertButton.disabled = false;
-        }
-
-        // リセットボタンを有効化
-        const resettButton = document.querySelector('button[onclick="reset()"]');
-        if (resettButton) {
-          resettButton.disabled = false;
-        }        
-        
-        // スピードスライダーを有効化
+        document.querySelectorAll('.digit-input').forEach(input => input.disabled = false);
+        document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
         const speedSlider = document.getElementById('speedSlider');
-        if (speedSlider) {
-          speedSlider.disabled = false;
-        }
+        if (speedSlider) speedSlider.disabled = false;
       }
 
-      function checkJsBarcodeLoaded() {
-      if (typeof JsBarcode === 'undefined') {
-        console.warn('JsBarcode library not loaded. Barcode generation will use text fallback.');
-          return false;
-        }
-        //console.log('JsBarcode library loaded successfully');
-        return true;
-      }
-
-      // ページ読み込み時の初期化（DOMContentLoaded）
     window.addEventListener('DOMContentLoaded', () => {
         reset();
       });
 
-      // ライブラリ読み込み確認（window.load）
-    window.addEventListener('load', () => {
-        checkJsBarcodeLoaded();
-      });
-
-      // 画面幅に応じて矢印の位置を調整
       function adjustArrowPosition() {
       const arrow = document.getElementById('arrow');
         if (window.innerWidth <= 767) {
