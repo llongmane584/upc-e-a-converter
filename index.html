@@ -663,8 +663,9 @@
         await sleep(300 / animationSpeed);
 
         // 2. Source Digits (Blue)
+        let p6Index = p6Value <= 2 ? 3 : (p6Value >= 5 ? 10 : -1);
         for (let i = 1; i < 11; i++) {
-          if (upcaDigits[i] !== '0' && i !== (p6Value <= 2 ? 3 : 10)) {
+          if (upcaDigits[i] !== '0' && i !== p6Index) {
             await sleep(100 / animationSpeed);
             upcaBoxes[i].textContent = upcaDigits[i];
             upcaBoxes[i].className = 'digit-box source animating';
@@ -673,7 +674,6 @@
         
         // 3. Moved P6 (Orange)
         await sleep(300 / animationSpeed);
-        let p6Index = p6Value <= 2 ? 3 : (p6Value >= 5 ? 10 : -1);
         if (p6Index !== -1) {
           upcaBoxes[p6Index].textContent = upcaDigits[p6Index];
           upcaBoxes[p6Index].className = 'digit-box moved animating';
