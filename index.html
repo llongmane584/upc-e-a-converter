@@ -1,746 +1,829 @@
 <!DOCTYPE html>
 <html lang="ja">
 
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPC-E → UPC-A 変換 with バーコード</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPC-E → UPC-A 変換 with バーコード</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap"
-    rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
       font-family: 'Noto Sans JP', sans-serif;
-      }
+    }
 
-      body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
 
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (max-width: 743px) {
       .toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 350px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .toast-container {
-          left: 50%;
-          right: auto;
-          transform: translateX(-50%);
-          width: 90%;
-          max-width: 350px;
-        }
-      }
+    .toast {
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideIn 0.3s ease-out forwards;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
 
+    @media (max-width: 743px) {
       .toast {
-        padding: 16px 24px;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        animation: slideIn 0.3s ease-out forwards;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+    }
+
+    .toast.error {
+      background-color: #dc3545;
+    }
+
+    .toast.success {
+      background-color: #28a745;
+    }
+
+    .toast.fade-out {
+      animation: fadeOut 0.3s ease-out forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
       }
 
-      @media (max-width: 767px) {
-        .toast {
-          padding: 12px 20px;
-          font-size: 14px;
-        }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
       }
 
-      .toast.error {
-        background-color: #dc3545;
+      to {
+        transform: translateX(100%);
+        opacity: 0;
       }
+    }
 
-      .toast.success {
-        background-color: #28a745;
-      }
-
-      .toast.fade-out {
-        animation: fadeOut 0.3s ease-out forwards;
-      }
-
+    @media (max-width: 743px) {
       @keyframes slideIn {
         from {
-          transform: translateX(100%);
+          transform: translateY(-100%);
           opacity: 0;
         }
+
         to {
-          transform: translateX(0);
+          transform: translateY(0);
           opacity: 1;
         }
       }
 
       @keyframes fadeOut {
         from {
-          transform: translateX(0);
+          transform: translateY(0);
           opacity: 1;
         }
+
         to {
-          transform: translateX(100%);
+          transform: translateY(-100%);
           opacity: 0;
         }
       }
+    }
 
-      @media (max-width: 767px) {
-        @keyframes slideIn {
-          from {
-            transform: translateY(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      max-width: 900px;
+      width: 100%;
+    }
 
-        @keyframes fadeOut {
-          from {
-            transform: translateY(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateY(-100%);
-            opacity: 0;
-          }
-        }
+    @media (max-width: 743px) {
+      body {
+        padding: 4px;
       }
 
       .container {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        max-width: 900px;
-        width: 100%;
-      }
-
-      @media (max-width: 767px) {
-        body {
-          padding: 4px;
-        }
-
-        .container {
-          padding: 16px;
-          border-radius: 15px;
-        }
-
-        h1 {
-          font-size: 1.5em !important;
-        }
+        padding: 16px;
+        border-radius: 15px;
       }
 
       h1 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-        font-size: 2em;
+        font-size: 1.5em !important;
       }
+    }
 
-      .input-section {
-        margin-bottom: 40px;
-      }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2em;
+    }
 
+    .input-section {
+      margin-bottom: 40px;
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 10px;
+      color: #666;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    @media (max-width: 743px) {
       .input-label {
-        display: block;
-        margin-bottom: 10px;
-        color: #666;
-        font-weight: 600;
-        text-align: center;
+        font-size: 14px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .input-label {
-          font-size: 14px;
-        }
-      }
+    .digit-inputs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
 
+    @media (max-width: 743px) {
       .digit-inputs {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
+        gap: 5px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .digit-inputs {
-          gap: 5px;
-        }
-      }
+    .digit-input {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      text-align: center;
+      border: 3px solid #ddd;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
 
+    @media (max-width: 743px) {
       .digit-input {
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-        text-align: center;
-        border: 3px solid #ddd;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        font-weight: bold;
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+        border-width: 2px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .digit-input {
-          width: 45px;
-          height: 45px;
-          font-size: 20px;
-          border-width: 2px;
-        }
-      }
+    .digit-input:focus {
+      outline: none;
+      border-color: #667eea;
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
 
-      .digit-input:focus {
-        outline: none;
-        border-color: #667eea;
-        transform: scale(1.1);
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-      }
+    .digit-input:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
-      .digit-input:disabled {
-        background-color: #f3f4f6;
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
+    .digit-input.p6 {
+      border-color: #f59e0b;
+      background-color: #fef3c7;
+    }
 
-      .digit-input.p6 {
-        border-color: #f59e0b;
-        background-color: #fef3c7;
-      }
+    .digit-input::-webkit-inner-spin-button,
+    .digit-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
 
-      .digit-input::-webkit-inner-spin-button,
-      .digit-input::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
+    .digit-input[type="number"] {
+      -moz-appearance: textfield;
+    }
 
-      .digit-input[type="number"] {
-        -moz-appearance: textfield;
-      }
+    .conversion-area {
+      min-height: 290px;
+      /*background: #f8f9fa;*/
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
 
+    @media (max-width: 743px) {
       .conversion-area {
-        min-height: 290px;
-        /*background: #f8f9fa;*/
-        border-radius: 15px;
-        padding: 30px;
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
-        overflow-x: hidden;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      @media (max-width: 767px) {
-        .conversion-area {
-          padding: 2px;
-          min-height: 280px;
-          margin-bottom: 20px;
-        }
-      }
-
-      .pattern-info {
-        background: #e0e7ff;
-        padding: 15px;
-        border-radius: 10px;
+        padding: 2px;
+        min-height: 280px;
         margin-bottom: 20px;
-        text-align: center;
-        font-weight: 600;
-        color: #4c1d95;
-        opacity: 0;
-        transition: opacity 0.5s ease;
-        min-height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        word-break: break-all;
       }
+    }
 
-      @media (max-width: 767px) {
-        .pattern-info {
-          font-size: 12px;
-          padding: 10px;
-          min-height: auto;
-        }
+    .pattern-info {
+      background: #e0e7ff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      color: #4c1d95;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      word-break: break-all;
+    }
+
+    @media (max-width: 743px) {
+      .pattern-info {
+        font-size: 12px;
+        padding: 10px;
+        min-height: auto;
       }
+    }
 
-      .pattern-info.show {
-        opacity: 1;
-      }
+    .pattern-info.show {
+      opacity: 1;
+    }
 
+    .barcode-display {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      position: relative;
+      padding: 0 10px;
+    }
+
+    @media (max-width: 743px) {
       .barcode-display {
-        display: flex;
-        flex-direction: column;
-        gap: 40px;
-        position: relative;
-        padding: 0 10px;
+        gap: 30px;
+        padding: 0;
       }
+    }
 
-      @media (max-width: 767px) {
-        .barcode-display {
-          gap: 30px;
-          padding: 0;
-        }
-      }
+    .barcode-wrapper {
+      display: flex;
+      align-items: center;
+      position: relative;
+      min-height: 54px;
+      flex-direction: column;
+      gap: 10px;
+    }
 
+    @media (min-width: 768px) {
       .barcode-wrapper {
-        display: flex;
-        align-items: center;
-        position: relative;
-        min-height: 54px;
-        flex-direction: column;
+        flex-direction: row;
+        gap: 0;
+      }
+    }
+
+    .barcode-label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 600;
+      width: auto;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .barcode-label {
+        position: absolute;
+        left: 0;
+        width: 80px;
+        text-align: left;
+      }
+    }
+
+    .barcode-row {
+      display: flex;
+      gap: 8px;
+      min-height: 54px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    @media (min-width: 768px) {
+      .barcode-row {
+        margin-left: 70px;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 743px) {
+      .barcode-row {
+        gap: 0px;
+      }
+    }
+
+    .digit-box {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      background: white;
+      position: relative;
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @media (max-width: 743px) {
+      .digit-box {
+        width: 26px;
+        height: 32px;
+        font-size: 14px;
+        border-radius: 6px;
+      }
+    }
+
+    .digit-box.source {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+
+    .digit-box.zero {
+      background: #dcfce7;
+      border-color: #22c55e;
+    }
+
+    .digit-box.moved {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+
+    .digit-box.check {
+      background: #fce7f3;
+      border-color: #ec4899;
+    }
+
+    .digit-box.placeholder {
+      background: white;
+      border-color: #ddd;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .digit-box.animating {
+      animation: pulse 0.6s ease-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+      }
+
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .arrow {
+      position: absolute;
+      font-size: 30px;
+      color: #667eea;
+      animation: bounce 1s infinite;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .arrow.no-animation {
+      animation: none;
+    }
+
+    @media (max-width: 743px) {
+      .arrow {
+        font-size: 24px;
+      }
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(10px);
+      }
+    }
+
+    .controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 743px) {
+      .controls {
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 743px) {
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #374151;
+      border: 1px solid #667eea;
+    }
+
+    .btn-secondary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #e1e1e1;
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 743px) {
+      .speed-control {
         gap: 10px;
       }
+    }
 
-      @media (min-width: 768px) {
-        .barcode-wrapper {
-          flex-direction: row;
-          gap: 0;
-        }
-      }
+    .speed-slider {
+      width: 200px;
+      max-width: 100%;
+    }
 
-      .barcode-label {
-        font-size: 14px;
-        color: #666;
-        font-weight: 600;
-        width: auto;
-        text-align: center;
-      }
+    .speed-slider:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
-      @media (min-width: 768px) {
-        .barcode-label {
-          position: absolute;
-          left: 0;
-          width: 80px;
-          text-align: left;
-        }
-      }
-
-      .barcode-row {
-        display: flex;
-        gap: 8px;
-        min-height: 54px;
-        align-items: center;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      @media (min-width: 768px) {
-        .barcode-row {
-          margin-left: 70px;
-          flex-wrap: nowrap;
-          justify-content: flex-start;
-        }
-      }
-
-      @media (max-width: 767px) {
-        .barcode-row {
-          gap: 0px;
-        }
-      }
-
-      .digit-box {
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        font-weight: bold;
-        border-radius: 8px;
-        border: 2px solid #ddd;
-        background: white;
-        position: relative;
-        transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      }
-
-      @media (max-width: 767px) {
-        .digit-box {
-          width: 26px;
-          height: 32px;
-          font-size: 14px;
-          border-radius: 6px;
-        }
-      }
-
-      .digit-box.source {
-        background: #dbeafe;
-        border-color: #3b82f6;
-      }
-
-      .digit-box.zero {
-        background: #dcfce7;
-        border-color: #22c55e;
-      }
-
-      .digit-box.moved {
-        background: #fef3c7;
-        border-color: #f59e0b;
-      }
-
-      .digit-box.check {
-        background: #fce7f3;
-        border-color: #ec4899;
-      }
-
-      .digit-box.placeholder {
-        background: white;
-        border-color: #ddd;
-        opacity: 1;
-        visibility: visible;
-      }
-
-      .digit-box.animating {
-        animation: pulse 0.6s ease-out;
-      }
-
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
-          box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
-        }
-
-        50% {
-          transform: scale(1.1);
-          box-shadow: 0 0 10px 5px rgba(102, 126, 234, 0);
-        }
-
-        100% {
-          transform: scale(1);
-        }
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-20px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .arrow {
-        position: absolute;
-        font-size: 30px;
-        color: #667eea;
-        animation: bounce 1s infinite;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .arrow.no-animation {
-        animation: none;
-      }
-
-      @media (max-width: 767px) {
-        .arrow {
-          font-size: 24px;
-        }
-      }
-
-      @keyframes bounce {
-
-        0%,
-        100% {
-          transform: translateX(-50%) translateY(0);
-        }
-
-        50% {
-          transform: translateX(-50%) translateY(10px);
-        }
-      }
-
-      .controls {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        margin-bottom: 30px;
-        flex-wrap: wrap;
-      }
-
-      @media (max-width: 767px) {
-        .controls {
-          gap: 10px;
-          margin-bottom: 20px;
-        }
-      }
-
-      .btn {
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      @media (max-width: 767px) {
-        .btn {
-          padding: 10px 20px;
-          font-size: 14px;
-        }
-      }
-
-      .btn-primary {
-        background: #667eea;
-        color: white;
-      }
-
-      .btn-primary:hover:not(:disabled) {
-        background: #5a67d8;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-      }
-
-      .btn-primary:disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
-
-      .btn-secondary {
-        background: #fff;
-        color: #374151;
-        border: 1px solid #667eea;
-      }
-
-      .btn-secondary:disabled {
-        background: #9ca3af;
-        cursor: not-allowed;
-        opacity: 0.6;
-      }      
-
-      .btn-secondary:hover:not(:disabled) {
-        background: #e1e1e1;
-      }
-
-      .speed-control {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        justify-content: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-      }
-
-      @media (max-width: 767px) {
-        .speed-control {
-          gap: 10px;
-        }
-      }
-
+    @media (max-width: 743px) {
       .speed-slider {
-        width: 200px;
-        max-width: 100%;
+        width: 150px;
       }
+    }
 
-      .speed-slider:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
+    .result-section {
+      text-align: center;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
 
-      @media (max-width: 767px) {
-        .speed-slider {
-          width: 150px;
-        }
-      }
-
+    @media (max-width: 743px) {
       .result-section {
-        text-align: center;
-        margin-top: 30px;
-        opacity: 0;
-        transition: opacity 0.5s ease;
+        margin-top: 20px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .result-section {
-          margin-top: 20px;
-        }
-      }
+    .result-section.show {
+      opacity: 1;
+    }
 
-      .result-section.show {
-        opacity: 1;
-      }
+    .result-section h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
 
+    @media (max-width: 743px) {
       .result-section h3 {
-        font-size: 18px;
+        font-size: 16px;
+      }
+    }
+
+    .result-code {
+      font-size: 24px;
+      font-family: 'Courier New', monospace;
+      background: #f3f4f6;
+      padding: 15px 30px;
+      border-radius: 10px;
+      margin: 10px auto;
+      display: inline-block;
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    @media (max-width: 743px) {
+      .result-code {
+        font-size: 20px;
+        padding: 12px 20px;
+      }
+    }
+
+    @media (max-width: 743px) {
+      .result-code {
+        font-size: 16px;
+        padding: 10px 15px;
+      }
+    }
+
+    .barcode-container {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      display: inline-block;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .barcode-container.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 743px) {
+      .barcode-container {
+        padding: 15px;
+        margin: 15px auto;
+      }
+    }
+
+    @media (max-width: 743px) {
+      .barcode-container {
+        padding: 10px;
+        margin: 10px auto;
+        max-width: 100%;
+        overflow-x: auto;
+      }
+    }
+
+    .barcode-svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 743px) {
+      .barcode-svg {
+        width: 100%;
+        min-width: 280px;
+      }
+    }
+
+    .pattern-table {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    @media (max-width: 743px) {
+      .pattern-table {
+        padding: 15px;
+        margin-top: 20px;
+      }
+    }
+
+    .pattern-table h3 {
+      margin-bottom: 15px;
+      color: #4b5563;
+      font-size: 18px;
+    }
+
+    @media (max-width: 743px) {
+      .pattern-table h3 {
+        font-size: 16px;
         margin-bottom: 10px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .result-section h3 {
-          font-size: 16px;
-        }
-      }
+    .pattern-row {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      word-break: break-all;
+    }
 
-      .result-code {
-        font-size: 24px;
-      font-family: 'Courier New', monospace;
-        background: #f3f4f6;
-        padding: 15px 30px;
-        border-radius: 10px;
-        margin: 10px auto;
-        display: inline-block;
-        word-break: break-all;
-        max-width: 100%;
-      }
-
-      @media (max-width: 767px) {
-        .result-code {
-          font-size: 20px;
-          padding: 12px 20px;
-        }
-      }
-
-      @media (max-width: 767px) {
-        .result-code {
-          font-size: 16px;
-          padding: 10px 15px;
-        }
-      }
-
-      .barcode-container {
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 20px auto;
-        display: inline-block;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        opacity: 0;
-        transition: opacity 0.5s ease;
-      }
-
-      .barcode-container.show {
-        opacity: 1;
-      }
-
-      @media (max-width: 767px) {
-        .barcode-container {
-          padding: 15px;
-          margin: 15px auto;
-        }
-      }
-
-      @media (max-width: 767px) {
-        .barcode-container {
-          padding: 10px;
-          margin: 10px auto;
-          max-width: 100%;
-          overflow-x: auto;
-        }
-      }
-
-      .barcode-svg {
-        display: block;
-        margin: 0 auto;
-        max-width: 100%;
-        height: auto;
-      }
-
-      @media (max-width: 767px) {
-        .barcode-svg {
-          width: 100%;
-          min-width: 280px;
-        }
-      }
-
-      .pattern-table {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-top: 30px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      }
-
-      @media (max-width: 767px) {
-        .pattern-table {
-          padding: 15px;
-          margin-top: 20px;
-        }
-      }
-
-      .pattern-table h3 {
-        margin-bottom: 15px;
-        color: #4b5563;
-        font-size: 18px;
-      }
-
-      @media (max-width: 767px) {
-        .pattern-table h3 {
-          font-size: 16px;
-          margin-bottom: 10px;
-        }
-      }
-
+    @media (max-width: 743px) {
       .pattern-row {
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
-        transition: all 0.3s ease;
-        font-family: "Courier New", monospace;
+        font-size: 12px;
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 743px) {
+      .pattern-row {
+        font-size: 11px;
+        padding: 6px;
+      }
+    }
+
+    .pattern-row.active {
+      background: #dbeafe;
+      border: 2px solid #3b82f6;
+      transform: scale(1.02);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 25px;
+    }
+
+    .mode-tab {
+      padding: 10px 24px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .mode-tab:first-child {
+      border-radius: 8px 0 0 8px;
+    }
+
+    .mode-tab:last-child {
+      border-radius: 0 8px 8px 0;
+      border-left: none;
+    }
+
+    .mode-tab.active {
+      background: #667eea;
+      color: white;
+    }
+
+    .mode-tab:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .mode-tab:hover:not(.active):not(:disabled) {
+      background: #e0e7ff;
+    }
+
+    .digit-inputs-12 {
+      gap: 6px;
+    }
+
+    .digit-inputs-12 .digit-input {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+    }
+
+    @media (max-width: 743px) {
+      .digit-inputs-12 .digit-input {
+        width: 28px;
+        height: 36px;
         font-size: 14px;
-        word-break: break-all;
+        border-width: 2px;
       }
 
-      @media (max-width: 767px) {
-        .pattern-row {
-          font-size: 12px;
-          padding: 8px;
-        }
+      .digit-inputs-12 {
+        gap: 3px;
       }
+    }
 
-      @media (max-width: 767px) {
-        .pattern-row {
-          font-size: 11px;
-          padding: 6px;
-        }
-      }
+    .digit-input.a-fixed {
+      background-color: #e0e7ff;
+      border-color: #667eea;
+      opacity: 0.8;
+    }
 
-      .pattern-row.active {
-        background: #dbeafe;
-        border: 2px solid #3b82f6;
-        transform: scale(1.02);
-      }
+    .digit-input.a-check {
+      border-color: #ec4899;
+      background-color: #fce7f3;
+    }
+  </style>
+</head>
 
-      .hidden {
-        display: none;
-      }
-    </style>
-  </head>
+<body>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="container">
+    <h1 id="pageTitle">UPC-E → UPC-A 変換</h1>
 
-  <body>
-    <div class="toast-container" id="toastContainer"></div>
-    <div class="container">
-      <h1>UPC-E → UPC-A 変換</h1>
+    <div class="mode-tabs" id="modeTabs">
+      <button class="mode-tab active" id="tabEtoA" onclick="switchMode('e-to-a')">UPC-E → UPC-A</button>
+      <button class="mode-tab" id="tabAtoE" onclick="switchMode('a-to-e')">UPC-A → UPC-E</button>
+    </div>
 
-      <div class="input-section">
+    <div class="input-section" id="inputSectionEtoA">
       <label class="input-label">UPC-E コード（6桁）を入力してください：</label>
-        <div class="digit-inputs">
+      <div class="digit-inputs">
         <input type="number" class="digit-input" maxlength="1" id="p1" placeholder="X₁" inputmode="numeric"
           pattern="[0-9]" autofocus>
         <input type="number" class="digit-input" maxlength="1" id="p2" placeholder="X₂" inputmode="numeric"
@@ -753,188 +836,215 @@
           pattern="[0-9]">
         <input type="number" class="digit-input p6" maxlength="1" id="p6" placeholder="P₆" inputmode="numeric"
           pattern="[0-9]">
-        </div>
       </div>
+    </div>
 
-      <div class="controls">
-      <button class="btn btn-primary" onclick="startConversion()">変換開始</button>
-        <button class="btn btn-secondary" onclick="reset()">リセット</button>
+    <div class="input-section hidden" id="inputSectionAtoE">
+      <label class="input-label">UPC-A コード（11桁 + 自動チェックデジット）を入力してください：</label>
+      <div class="digit-inputs digit-inputs-12">
+        <input type="number" class="digit-input a-input a-fixed" value="0" disabled id="a0" inputmode="numeric">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a1" placeholder="M₁" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a2" placeholder="M₂" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a3" placeholder="M₃" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a4" placeholder="M₄" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a5" placeholder="M₅" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a6" placeholder="N₁" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a7" placeholder="N₂" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a8" placeholder="N₃" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a9" placeholder="N₄" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input" maxlength="1" id="a10" placeholder="N₅" inputmode="numeric" pattern="[0-9]">
+        <input type="number" class="digit-input a-input a-check" id="a11" disabled placeholder="C" inputmode="numeric">
       </div>
+    </div>
 
-      <div class="speed-control">
-        <label>アニメーション速度：</label>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="handleConvert()">変換開始</button>
+      <button class="btn btn-secondary" onclick="reset()">リセット</button>
+    </div>
+
+    <div class="speed-control">
+      <label>アニメーション速度：</label>
       <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
-        <span id="speedValue">1x</span>
-      </div>
+      <span id="speedValue">1x</span>
+    </div>
 
-      <div class="conversion-area">
-        <div class="pattern-info" id="patternInfo">&nbsp;</div>
+    <div class="conversion-area">
+      <div class="pattern-info" id="patternInfo">&nbsp;</div>
 
-        <div class="barcode-display">
-          <div class="barcode-wrapper">
-            <span class="barcode-label">UPC-E:</span>
-            <div class="barcode-row" id="upceDisplay"></div>
-          </div>
+      <div class="barcode-display">
+        <div class="barcode-wrapper">
+          <span class="barcode-label" id="topRowLabel">UPC-E:</span>
+          <div class="barcode-row" id="topRowDisplay"></div>
+        </div>
 
         <div class="arrow hidden" id="arrow" style="top: 50px;">↓</div>
 
-          <div class="barcode-wrapper">
-            <span class="barcode-label">UPC-A:</span>
-            <div class="barcode-row" id="upcaDisplay"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="result-section" id="resultSection">
-        <h3>変換結果</h3>
-
-        <!-- バーコード表示エリア（result-codeを置き換え） -->
-        <div class="result-code" id="resultCode">
-          <svg id="barcodeDisplay" class="barcode-svg"></svg>
-        </div>
-      </div>
-
-      <div class="pattern-table">
-        <h3>変換パターン一覧</h3>
-      <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 0000 + X₃X₄X₅ + C</div>
-      <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
-      <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
-      <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
-      <hr>
-      <div style="margin-top: 15px; text-align: left; font-size: 14px;"><span style="margin-right:0.2rem;">📖 参照:</span>
-        <a href="https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf" target="_blank"
-          style="color: #667eea; text-decoration: none; ">
-            GS1 General Specifications (PDF)
-          </a>
+        <div class="barcode-wrapper">
+          <span class="barcode-label" id="bottomRowLabel">UPC-A:</span>
+          <div class="barcode-row" id="bottomRowDisplay"></div>
         </div>
       </div>
     </div>
 
-    <script>
-      let animationSpeed = 1;
+    <div class="result-section" id="resultSection">
+      <h3>変換結果</h3>
 
-      function showToast(message, type = 'error') {
-        const toastContainer = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        
-        toast.addEventListener('click', () => {
+      <!-- バーコード表示エリア（result-codeを置き換え） -->
+      <div class="result-code" id="resultCode">
+        <svg id="barcodeDisplay" class="barcode-svg"></svg>
+      </div>
+    </div>
+
+    <div class="pattern-table">
+      <h3 id="patternTableTitle">変換パターン一覧</h3>
+      <div id="patternsEtoA">
+        <div class="pattern-row" id="pattern0">P6 = 0,1,2: 0 + X₁X₂ + P6 + 0000 + X₃X₄X₅ + C</div>
+        <div class="pattern-row" id="pattern3">P6 = 3: 0 + X₁X₂X₃ + 00000 + X₄X₅ + C</div>
+        <div class="pattern-row" id="pattern4">P6 = 4: 0 + X₁X₂X₃X₄ + 00000 + X₅ + C</div>
+        <div class="pattern-row" id="pattern5">P6 = 5-9: 0 + X₁X₂X₃X₄X₅ + 0000 + P6 + C</div>
+      </div>
+      <div id="patternsAtoE" class="hidden">
+        <div class="pattern-row" id="rpattern0">M₃∈{0,1,2}, M₄M₅N₁N₂=0000 → M₁M₂N₃N₄N₅M₃</div>
+        <div class="pattern-row" id="rpattern3">M₃≥3, M₄M₅N₁N₂N₃=00000 → M₁M₂M₃N₄N₅3</div>
+        <div class="pattern-row" id="rpattern4">M₄≠0, M₅N₁N₂N₃N₄=00000 → M₁M₂M₃M₄N₅4</div>
+        <div class="pattern-row" id="rpattern5">N₁N₂N₃N₄=0000, N₅∈{5-9} → M₁M₂M₃M₄M₅N₅</div>
+      </div>
+      <hr>
+      <div style="margin-top: 15px; text-align: left; font-size: 14px;"><span style="margin-right:0.2rem;">📖 参照:</span>
+        <a href="https://www.gs1jp.org/assets/img/pdf/GS1_General_Specifications.pdf" target="_blank"
+          style="color: #667eea; text-decoration: none; ">
+          GS1 General Specifications (PDF)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let animationSpeed = 1;
+    let currentMode = 'e-to-a';
+
+    function showToast(message, type = 'error') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+
+      toast.addEventListener('click', () => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      });
+
+      toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast.parentElement) {
           toast.classList.add('fade-out');
           setTimeout(() => toast.remove(), 300);
-        });
-        
-        toastContainer.appendChild(toast);
-        
-        setTimeout(() => {
-          if (toast.parentElement) {
-            toast.classList.add('fade-out');
-            setTimeout(() => toast.remove(), 300);
-          }
-        }, 3000);
-      }
+        }
+      }, 3000);
+    }
 
-    document.querySelectorAll('.digit-input').forEach((input, index, inputs) => {
+    document.querySelectorAll('#inputSectionEtoA .digit-input').forEach((input, index, inputs) => {
       input.addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
-        
-            if (e.target.value.length > 1) {
-              e.target.value = e.target.value.slice(0, 1);
-            }
 
-            if (e.target.value.length === 1 && index < inputs.length - 1) {
-              inputs[index + 1].focus();
-            }
-          });
+        if (e.target.value.length > 1) {
+          e.target.value = e.target.value.slice(0, 1);
+        }
+
+        if (e.target.value.length === 1 && index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        }
+      });
 
       input.addEventListener('keydown', (e) => {
-            const allowedKeys = [
+        const allowedKeys = [
           'Backspace', 'Delete', 'Tab', 'Enter',
           'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
           'Home', 'End'
-            ];
+        ];
 
-            const isDigit = /^[0-9]$/.test(e.key);
-            const isAllowedKey = allowedKeys.includes(e.key);
-            const isCtrlKey = e.ctrlKey || e.metaKey;
+        const isDigit = /^[0-9]$/.test(e.key);
+        const isAllowedKey = allowedKeys.includes(e.key);
+        const isCtrlKey = e.ctrlKey || e.metaKey;
 
-            if (!isDigit && !isAllowedKey && !isCtrlKey) {
-              e.preventDefault();
-              return;
-            }
+        if (!isDigit && !isAllowedKey && !isCtrlKey) {
+          e.preventDefault();
+          return;
+        }
 
         if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
-              inputs[index - 1].focus();
-            }
-          });
-
-      input.addEventListener('focus', (e) => {
-            e.target.select();
-          });
-        });
-
-    document.getElementById('speedSlider').addEventListener('input', (e) => {
-        animationSpeed = parseFloat(e.target.value);
-      document.getElementById('speedValue').textContent = animationSpeed + 'x';
+          inputs[index - 1].focus();
+        }
       });
 
-      function calculateCheckDigit(digits) {
-        let sum = 0;
-        for (let i = 0; i < 11; i++) {
-          sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
-        }
-        return (10 - (sum % 10)) % 10;
-      }
+      input.addEventListener('focus', (e) => {
+        e.target.select();
+      });
+    });
 
-      function fallbackTextDisplay(upcCode) {
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      animationSpeed = parseFloat(e.target.value);
+      document.getElementById('speedValue').textContent = animationSpeed + 'x';
+    });
+
+    function calculateCheckDigit(digits) {
+      let sum = 0;
+      for (let i = 0; i < 11; i++) {
+        sum += parseInt(digits[i]) * (i % 2 === 0 ? 3 : 1);
+      }
+      return (10 - (sum % 10)) % 10;
+    }
+
+    function fallbackTextDisplay(upcCode) {
       const resultCode = document.getElementById('resultCode');
-        resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
+      resultCode.innerHTML = `<div style="font-family: 'Courier New', monospace; font-size: 24px; color: #333; text-align: center; padding: 20px; border: 2px dashed #ccc; border-radius: 8px;">
                 <div style="margin-bottom: 10px; font-size: 18px; color: #666;">バーコード（テキスト表示）</div>
                 <div>${upcCode}</div>
             </div>`;
-      }
+    }
 
-      function generateBarcode(upcCode) {
+    function generateBarcode(upcCode) {
       if (typeof JsBarcode === 'undefined') {
         console.warn('JsBarcode library not loaded, using fallback text display');
-          fallbackTextDisplay(upcCode);
-          return;
-        }
+        fallbackTextDisplay(upcCode);
+        return;
+      }
 
-        if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
+      if (!upcCode || upcCode.length !== 12 || !/^\d{12}$/.test(upcCode)) {
         console.error('Invalid UPC code format:', upcCode, 'Expected 12 digits, got', upcCode.length, 'digits');
-          fallbackTextDisplay(upcCode);
-          return;
-        }
+        fallbackTextDisplay(upcCode);
+        return;
+      }
 
-        try {
+      try {
         const svg = document.getElementById('barcodeDisplay');
 
         svg.innerHTML = '';
 
-          JsBarcode(svg, upcCode, {
-            format: "UPC",
-            width: 2,
-            height: 80,
-            lineColor: "#000000",
-            background: "#ffffff",
-            margin: 10,
-            fontSize: 14,
-            displayValue: true,
-            fontOptions: "bold",
-            textAlign: "center",
-            textPosition: "bottom",
+        JsBarcode(svg, upcCode, {
+          format: "UPC",
+          width: 2,
+          height: 80,
+          lineColor: "#000000",
+          background: "#ffffff",
+          margin: 10,
+          fontSize: 14,
+          displayValue: true,
+          fontOptions: "bold",
+          textAlign: "center",
+          textPosition: "bottom",
           textMargin: 2
-          });
+        });
 
-        } catch (error) {
+      } catch (error) {
         console.error('バーコード生成エラー:', error);
         console.error('UPC Code:', upcCode, 'Length:', upcCode.length);
-          fallbackTextDisplay(upcCode);
-        }
+        fallbackTextDisplay(upcCode);
       }
+    }
 
-      async function startConversion() {
+    async function startConversion() {
       const p1 = document.getElementById('p1').value;
       const p2 = document.getElementById('p2').value;
       const p3 = document.getElementById('p3').value;
@@ -942,24 +1052,24 @@
       const p5 = document.getElementById('p5').value;
       const p6 = document.getElementById('p6').value;
 
-        if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
+      if (!p1 || !p2 || !p3 || !p4 || !p5 || !p6) {
         showToast('すべての桁を入力してください', 'error');
-          return;
-        }
+        return;
+      }
 
       if (!/^\d$/.test(p1) || !/^\d$/.test(p2) || !/^\d$/.test(p3) ||
         !/^\d$/.test(p4) || !/^\d$/.test(p5) || !/^\d$/.test(p6)) {
         showToast('数字のみを入力してください', 'error');
-          return;
-        }
+        return;
+      }
 
-        disableUIElements();
+      disableUIElements();
 
-        try {
+      try {
         reset();
 
-      const upceDisplay = document.getElementById('upceDisplay');
-      const existingPlaceholders = upceDisplay.querySelectorAll('.digit-box.placeholder');
+        const upceDisplay = document.getElementById('topRowDisplay');
+        const existingPlaceholders = upceDisplay.querySelectorAll('.digit-box.placeholder');
 
         const upceDigits = [p1, p2, p3, p4, p5, p6];
         const upceBoxes = [];
@@ -975,62 +1085,62 @@
 
         upceBoxes.forEach((box, index) => {
           const digit = upceDigits[index];
-        const className = index < 5 ? 'source' : 'moved';
+          const className = index < 5 ? 'source' : 'moved';
 
           box.textContent = digit;
 
           setTimeout(() => {
             box.className = `digit-box ${className}`;
-          box.classList.add('animating');
+            box.classList.add('animating');
           }, 50);
         });
 
-      const patternInfo = document.getElementById('patternInfo');
+        const patternInfo = document.getElementById('patternInfo');
         const p6Value = parseInt(p6);
-      let pattern = '';
-      let patternId = '';
+        let pattern = '';
+        let patternId = '';
 
         if (p6Value >= 0 && p6Value <= 2) {
           pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2} + ${p6} + 0000 + ${p3}${p4}${p5} + C`;
-        patternId = 'pattern0';
+          patternId = 'pattern0';
         } else if (p6Value === 3) {
           pattern = `P6 = 3 のパターン: 0 + ${p1}${p2}${p3} + 00000 + ${p4}${p5} + C`;
-        patternId = 'pattern3';
+          patternId = 'pattern3';
         } else if (p6Value === 4) {
           pattern = `P6 = 4 のパターン: 0 + ${p1}${p2}${p3}${p4} + 00000 + ${p5} + C`;
-        patternId = 'pattern4';
+          patternId = 'pattern4';
         } else {
           pattern = `P6 = ${p6} のパターン: 0 + ${p1}${p2}${p3}${p4}${p5} + 0000 + ${p6} + C`;
-        patternId = 'pattern5';
+          patternId = 'pattern5';
         }
 
         patternInfo.textContent = pattern;
-      patternInfo.classList.add('show');
+        patternInfo.classList.add('show');
 
-      document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
-      document.getElementById(patternId).classList.add('active');
+        document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
+        document.getElementById(patternId).classList.add('active');
 
         await sleep(500 / animationSpeed);
 
-      document.getElementById('arrow').classList.remove('hidden');
+        document.getElementById('arrow').classList.remove('hidden');
 
         await sleep(200 / animationSpeed);
 
-      const upcaDisplay = document.getElementById('upcaDisplay');
-      const existingUpcaPlaceholders = upcaDisplay.querySelectorAll('.digit-box.placeholder');
+        const upcaDisplay = document.getElementById('bottomRowDisplay');
+        const existingUpcaPlaceholders = upcaDisplay.querySelectorAll('.digit-box.placeholder');
 
         let upcaDigits = [];
 
-      upcaDigits.push('0');
+        upcaDigits.push('0');
 
         if (p6Value >= 0 && p6Value <= 2) {
-        upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
+          upcaDigits.push(p1, p2, p6, '0', '0', '0', '0', p3, p4, p5);
         } else if (p6Value === 3) {
-        upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
+          upcaDigits.push(p1, p2, p3, '0', '0', '0', '0', '0', p4, p5);
         } else if (p6Value === 4) {
-        upcaDigits.push(p1, p2, p3, p4, '0', '0', '0', '0', '0', p5);
+          upcaDigits.push(p1, p2, p3, p4, '0', '0', '0', '0', '0', p5);
         } else {
-        upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
+          upcaDigits.push(p1, p2, p3, p4, p5, '0', '0', '0', '0', p6);
         }
 
         const checkDigit = calculateCheckDigit(upcaDigits);
@@ -1049,8 +1159,8 @@
         if (upcaBoxes[0]) {
           upcaBoxes[0].textContent = upcaDigits[0];
           setTimeout(() => {
-          upcaBoxes[0].className = 'digit-box zero';
-          upcaBoxes[0].classList.add('animating');
+            upcaBoxes[0].className = 'digit-box zero';
+            upcaBoxes[0].classList.add('animating');
           }, 50);
         }
 
@@ -1058,10 +1168,10 @@
 
         const sourceIndices = [];
         for (let i = 1; i < upcaDigits.length - 1; i++) {
-        if (upcaDigits[i] !== '0') {
+          if (upcaDigits[i] !== '0') {
             let willBeMoved = false;
-          if ((p6Value >= 0 && p6Value <= 2) && i === 3) willBeMoved = true;
-          else if (p6Value >= 5 && p6Value <= 9 && i === 10) willBeMoved = true;
+            if ((p6Value >= 0 && p6Value <= 2) && i === 3) willBeMoved = true;
+            else if (p6Value >= 5 && p6Value <= 9 && i === 10) willBeMoved = true;
 
             if (!willBeMoved) {
               sourceIndices.push(i);
@@ -1076,8 +1186,8 @@
           if (upcaBoxes[index]) {
             upcaBoxes[index].textContent = upcaDigits[index];
             setTimeout(() => {
-            upcaBoxes[index].className = 'digit-box source';
-            upcaBoxes[index].classList.add('animating');
+              upcaBoxes[index].className = 'digit-box source';
+              upcaBoxes[index].classList.add('animating');
             }, 50);
           }
         }
@@ -1092,20 +1202,20 @@
           await sleep(150 / animationSpeed);
           upcaBoxes[p6Index].textContent = upcaDigits[p6Index];
           setTimeout(() => {
-          upcaBoxes[p6Index].className = 'digit-box moved';
-          upcaBoxes[p6Index].classList.add('animating');
+            upcaBoxes[p6Index].className = 'digit-box moved';
+            upcaBoxes[p6Index].classList.add('animating');
           }, 50);
         }
 
         await sleep(800 / animationSpeed);
 
         for (let i = 1; i < upcaBoxes.length - 1; i++) {
-        if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
+          if (upcaDigits[i] === '0' && upcaBoxes[i] && upcaBoxes[i].textContent === '') {
             await sleep(100 / animationSpeed);
-          upcaBoxes[i].textContent = '0';
+            upcaBoxes[i].textContent = '0';
             setTimeout(() => {
-            upcaBoxes[i].className = 'digit-box zero';
-            upcaBoxes[i].classList.add('animating');
+              upcaBoxes[i].className = 'digit-box zero';
+              upcaBoxes[i].classList.add('animating');
             }, 50);
           }
         }
@@ -1117,117 +1227,323 @@
         if (lastBox) {
           lastBox.textContent = upcaDigits[upcaDigits.length - 1];
           setTimeout(() => {
-          lastBox.className = 'digit-box check';
-          lastBox.classList.add('animating');
+            lastBox.className = 'digit-box check';
+            lastBox.classList.add('animating');
           }, 50);
         }
 
         await sleep(1000 / animationSpeed);
 
-      const resultSection = document.getElementById('resultSection');
-      const upcCode = upcaDigits.join('');
+        const resultSection = document.getElementById('resultSection');
+        const upcCode = upcaDigits.join('');
 
-      resultSection.classList.add('show');
+        resultSection.classList.add('show');
 
         await sleep(500 / animationSpeed);
         generateBarcode(upcCode);
-        } finally {
-          enableUIElements();
-        }
+      } finally {
+        enableUIElements();
       }
+    }
 
-      function sleep(ms) {
+    function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
-      }
+    }
 
-      function reset() {
-      const upceDisplay = document.getElementById('upceDisplay');
-      const upcaDisplay = document.getElementById('upcaDisplay');
+    function reset() {
+      const topRowDisplay = document.getElementById('topRowDisplay');
+      const bottomRowDisplay = document.getElementById('bottomRowDisplay');
       const arrow = document.getElementById('arrow');
       const patternInfo = document.getElementById('patternInfo');
       const resultSection = document.getElementById('resultSection');
       const barcodeDisplay = document.getElementById('barcodeDisplay');
 
-        if (upceDisplay) {
-        const existingBoxes = upceDisplay.querySelectorAll('.digit-box');
-        existingBoxes.forEach(box => {
-          box.className = 'digit-box placeholder';
-          box.textContent = '';
-          box.style.opacity = '1';
-          box.style.visibility = 'visible';
-          });
+      const topCount = currentMode === 'e-to-a' ? 6 : 12;
+      const bottomCount = currentMode === 'e-to-a' ? 12 : 6;
 
-          const needed = 6 - existingBoxes.length;
-          for (let i = 0; i < needed; i++) {
-          const placeholderE = document.createElement('div');
-          placeholderE.classList.add('digit-box', 'placeholder');
-            upceDisplay.appendChild(placeholderE);
-          }
+      if (topRowDisplay) {
+        topRowDisplay.innerHTML = '';
+        for (let i = 0; i < topCount; i++) {
+          const box = document.createElement('div');
+          box.classList.add('digit-box', 'placeholder');
+          topRowDisplay.appendChild(box);
         }
+      }
 
-        if (upcaDisplay) {
-        const existingBoxes = upcaDisplay.querySelectorAll('.digit-box');
-        existingBoxes.forEach(box => {
-          box.className = 'digit-box placeholder';
-          box.textContent = '';
-          box.style.opacity = '1';
-          box.style.visibility = 'visible';
-          });
-
-          const needed = 12 - existingBoxes.length;
-          for (let i = 0; i < needed; i++) {
-          const placeholderA = document.createElement('div');
-          placeholderA.classList.add('digit-box', 'placeholder');
-            upcaDisplay.appendChild(placeholderA);
-          }
+      if (bottomRowDisplay) {
+        bottomRowDisplay.innerHTML = '';
+        for (let i = 0; i < bottomCount; i++) {
+          const box = document.createElement('div');
+          box.classList.add('digit-box', 'placeholder');
+          bottomRowDisplay.appendChild(box);
         }
+      }
 
       if (arrow) {
         arrow.classList.add('hidden');
         arrow.classList.remove('no-animation');
       }
-        if (patternInfo) {
+      if (patternInfo) {
         patternInfo.classList.remove('show');
         patternInfo.innerHTML = '&nbsp;';
-        }
+      }
       if (resultSection) resultSection.classList.remove('show');
       if (barcodeDisplay) barcodeDisplay.innerHTML = '';
       document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
+    }
+
+    function disableUIElements() {
+      document.querySelectorAll('.digit-input').forEach(input => input.disabled = true);
+      document.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
+      document.querySelectorAll('.mode-tab').forEach(tab => tab.disabled = true);
+      const speedSlider = document.getElementById('speedSlider');
+      if (speedSlider) speedSlider.disabled = true;
+    }
+
+    function enableUIElements() {
+      document.querySelectorAll('.digit-input:not(.a-fixed):not(.a-check)').forEach(input => input.disabled = false);
+      document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
+      document.querySelectorAll('.mode-tab').forEach(tab => tab.disabled = false);
+      const speedSlider = document.getElementById('speedSlider');
+      if (speedSlider) speedSlider.disabled = false;
+
+      const arrow = document.getElementById('arrow');
+      if (arrow) arrow.classList.add('no-animation');
+    }
+
+    function handleConvert() {
+      if (currentMode === 'e-to-a') {
+        startConversion();
+      } else {
+        startReverseConversion();
+      }
+    }
+
+    function switchMode(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+
+      document.getElementById('tabEtoA').classList.toggle('active', mode === 'e-to-a');
+      document.getElementById('tabAtoE').classList.toggle('active', mode === 'a-to-e');
+
+      document.getElementById('inputSectionEtoA').classList.toggle('hidden', mode !== 'e-to-a');
+      document.getElementById('inputSectionAtoE').classList.toggle('hidden', mode !== 'a-to-e');
+
+      document.getElementById('patternsEtoA').classList.toggle('hidden', mode !== 'e-to-a');
+      document.getElementById('patternsAtoE').classList.toggle('hidden', mode !== 'a-to-e');
+
+      if (mode === 'e-to-a') {
+        document.getElementById('pageTitle').textContent = 'UPC-E → UPC-A 変換';
+        document.getElementById('topRowLabel').textContent = 'UPC-E:';
+        document.getElementById('bottomRowLabel').textContent = 'UPC-A:';
+      } else {
+        document.getElementById('pageTitle').textContent = 'UPC-A → UPC-E 変換';
+        document.getElementById('topRowLabel').textContent = 'UPC-A:';
+        document.getElementById('bottomRowLabel').textContent = 'UPC-E:';
       }
 
-      function disableUIElements() {
-        document.querySelectorAll('.digit-input').forEach(input => input.disabled = true);
-        document.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
-        const speedSlider = document.getElementById('speedSlider');
-        if (speedSlider) speedSlider.disabled = true;
+      reset();
+
+      if (mode === 'a-to-e') {
+        document.getElementById('a1').focus();
+      } else {
+        document.getElementById('p1').focus();
+      }
+    }
+
+    function setupAtoEInputListeners() {
+      const inputs = document.querySelectorAll('#inputSectionAtoE .a-input:not([disabled])');
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+          if (e.target.value.length > 1) {
+            e.target.value = e.target.value.slice(0, 1);
+          }
+          if (e.target.value.length === 1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+          updateCheckDigit();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          const allowedKeys = [
+            'Backspace', 'Delete', 'Tab', 'Enter',
+            'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Home', 'End'
+          ];
+          const isDigit = /^[0-9]$/.test(e.key);
+          const isAllowedKey = allowedKeys.includes(e.key);
+          const isCtrlKey = e.ctrlKey || e.metaKey;
+
+          if (!isDigit && !isAllowedKey && !isCtrlKey) {
+            e.preventDefault();
+            return;
+          }
+
+          if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+
+        input.addEventListener('focus', (e) => {
+          e.target.select();
+        });
+      });
+    }
+
+    function updateCheckDigit() {
+      const digits = ['0'];
+      let allFilled = true;
+      for (let i = 1; i <= 10; i++) {
+        const val = document.getElementById('a' + i).value;
+        if (!val || !/^\d$/.test(val)) {
+          allFilled = false;
+          break;
+        }
+        digits.push(val);
+      }
+      const a11 = document.getElementById('a11');
+      if (allFilled) {
+        const checkDigit = calculateCheckDigit(digits);
+        a11.value = checkDigit;
+      } else {
+        a11.value = '';
+      }
+    }
+
+    function determineReversePattern(d) {
+      const M = [d[1], d[2], d[3], d[4], d[5]];
+      const N = [d[6], d[7], d[8], d[9], d[10]];
+
+      if (['0', '1', '2'].includes(M[2]) && M[3] + M[4] + N[0] + N[1] === '0000') {
+        return { upce: [M[0], M[1], N[2], N[3], N[4], M[2]], patternId: 'rpattern0' };
+      }
+      if (parseInt(M[2]) >= 3 && M[3] + M[4] + N[0] + N[1] + N[2] === '00000') {
+        return { upce: [M[0], M[1], M[2], N[3], N[4], '3'], patternId: 'rpattern3' };
+      }
+      if (M[3] !== '0' && M[4] + N[0] + N[1] + N[2] + N[3] === '00000') {
+        return { upce: [M[0], M[1], M[2], M[3], N[4], '4'], patternId: 'rpattern4' };
+      }
+      if (N[0] + N[1] + N[2] + N[3] === '0000' && parseInt(N[4]) >= 5) {
+        return { upce: [M[0], M[1], M[2], M[3], M[4], N[4]], patternId: 'rpattern5' };
+      }
+      return null;
+    }
+
+    async function startReverseConversion() {
+      const digits = ['0'];
+      for (let i = 1; i <= 10; i++) {
+        const val = document.getElementById('a' + i).value;
+        if (!val || !/^\d$/.test(val)) {
+          showToast('すべての桁を入力してください', 'error');
+          return;
+        }
+        digits.push(val);
       }
 
-      function enableUIElements() {
-        document.querySelectorAll('.digit-input').forEach(input => input.disabled = false);
-        document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
-        const speedSlider = document.getElementById('speedSlider');
-        if (speedSlider) speedSlider.disabled = false;
-        
-        const arrow = document.getElementById('arrow');
-        if (arrow) arrow.classList.add('no-animation');
+      const checkDigit = calculateCheckDigit(digits);
+      digits.push(checkDigit.toString());
+
+      const result = determineReversePattern(digits);
+      if (!result) {
+        showToast('このUPC-Aコードは UPC-E に変換できません', 'error');
+        return;
       }
+
+      disableUIElements();
+
+      try {
+        reset();
+
+        const topRowDisplay = document.getElementById('topRowDisplay');
+        const topPlaceholders = topRowDisplay.querySelectorAll('.digit-box.placeholder');
+
+        await sleep(500 / animationSpeed);
+
+        for (let i = 0; i < digits.length; i++) {
+          const box = topPlaceholders[i];
+          if (!box) continue;
+          box.textContent = digits[i];
+
+          let className = 'source';
+          if (i === 0) className = 'zero';
+          else if (i === 11) className = 'check';
+          else if (digits[i] === '0') className = 'zero';
+
+          setTimeout(() => {
+            box.className = `digit-box ${className}`;
+            box.classList.add('animating');
+          }, 50);
+
+          await sleep(100 / animationSpeed);
+        }
+
+        const patternInfo = document.getElementById('patternInfo');
+        const patternTexts = {
+          'rpattern0': `パターン 0/1/2: M₃=${digits[3]} → UPC-E = ${result.upce.join('')}`,
+          'rpattern3': `パターン 3: M₃=${digits[3]}(≥3) → UPC-E = ${result.upce.join('')}`,
+          'rpattern4': `パターン 4: M₄=${digits[4]}(≠0) → UPC-E = ${result.upce.join('')}`,
+          'rpattern5': `パターン 5-9: N₅=${digits[10]} → UPC-E = ${result.upce.join('')}`
+        };
+        patternInfo.textContent = patternTexts[result.patternId];
+        patternInfo.classList.add('show');
+
+        document.querySelectorAll('.pattern-row').forEach(row => row.classList.remove('active'));
+        document.getElementById(result.patternId).classList.add('active');
+
+        await sleep(500 / animationSpeed);
+
+        document.getElementById('arrow').classList.remove('hidden');
+
+        await sleep(200 / animationSpeed);
+
+        const bottomRowDisplay = document.getElementById('bottomRowDisplay');
+        const bottomPlaceholders = bottomRowDisplay.querySelectorAll('.digit-box.placeholder');
+
+        for (let i = 0; i < result.upce.length; i++) {
+          await sleep(150 / animationSpeed);
+          const box = bottomPlaceholders[i];
+          if (!box) continue;
+
+          box.textContent = result.upce[i];
+          const className = i < 5 ? 'source' : 'moved';
+          setTimeout(() => {
+            box.className = `digit-box ${className}`;
+            box.classList.add('animating');
+          }, 50);
+        }
+
+        await sleep(1000 / animationSpeed);
+
+        const resultSection = document.getElementById('resultSection');
+        resultSection.classList.add('show');
+
+        await sleep(500 / animationSpeed);
+
+        const upceCode = result.upce.join('');
+        fallbackTextDisplay(upceCode);
+      } finally {
+        enableUIElements();
+      }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
-        reset();
-      });
+      reset();
+      setupAtoEInputListeners();
+    });
 
-      function adjustArrowPosition() {
+    function adjustArrowPosition() {
       const arrow = document.getElementById('arrow');
-        if (window.innerWidth <= 767) {
+      if (window.innerWidth <= 767) {
         arrow.style.top = '75px';
-        } else {
+      } else {
         arrow.style.top = '50px';
-        }
       }
+    }
 
     window.addEventListener('resize', adjustArrowPosition);
     window.addEventListener('DOMContentLoaded', adjustArrowPosition);
-    </script>
-  </body>
+  </script>
+</body>
 
 </html>
